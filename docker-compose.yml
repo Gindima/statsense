@@ -1,0 +1,115 @@
+# docker-compose.yml
+#
+# StatSense AI — pile complète
+#
+#     docker compose up
+#
+# Trois services, un seul port exposé, données déjà chargées. Le frontend
+# n'a pas de conteneur : il est compilé dans l'image du backend et servi par
+# Django. Chaque service en moins est une panne en moins le jour de la
+# démonstration.
+#
+#     db        PostgreSQL 16 + pg_trgm
+#     ollama    le modèle de langage, volume persistant
+#     app       Django + gunicorn : API et frontend sur le port 8000
+#
+# Le modèle est un RÉGLAGE, pas une dépendance d'architecture. Il ne produit
+# qu'un plan de requête, validé puis exécuté par le moteur ; changer
+# OLLAMA_MODEL dans .env suffit à passer d'un 3B sur processeur à un 14B sur
+# carte graphique, sans toucher une ligne de code.
+
+name: statsense
+
+services:
+
+  db:
+    image: postgres:16
+    container_name: statsense_db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-statsense}
+      POSTGRES_USER: ${DB_USER:-statsense}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-statsense}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Port publié uniquement pour inspecter la base depuis la machine hôte.
+    # Peut être retiré sans conséquence sur le fonctionnement.
+    ports:
+      - "${DB_PORT_HOTE:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-statsense}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: statsense_ollama
+    environment:
+      # Le modèle reste chargé en mémoire. Sans cela il est libéré au bout de
+      # cinq minutes, et la question suivante paie deux à trois minutes de
+      # rechargement — mesuré sur une machine sans carte graphique.
+      OLLAMA_KEEP_ALIVE: "-1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  # Service à usage unique : télécharge le modèle au premier démarrage, puis
+  # s'arrête. Le volume partagé fait que les démarrages suivants n'ont rien à
+  # télécharger. `app` ne l'attend pas : si le réseau manque, la plateforme
+  # démarre quand même et les questions préchauffées répondent.
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: statsense_ollama_init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        modele="${OLLAMA_MODEL:-qwen2.5:3b-instruct}"
+        if ollama list | grep -q "$${modele%%:*}"; then
+          echo "$$modele déjà présent."
+        else
+          echo "Téléchargement de $$modele (environ 2 Go)…"
+          ollama pull "$$modele" || echo "Échec du téléchargement. Voir DEPLOIEMENT.md, section hors ligne."
+        fi
+    volumes:
+      - ollama:/root/.ollama
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: statsense_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_NAME: ${DB_NAME:-statsense}
+      DB_USER: ${DB_USER:-statsense}
+      DB_PASSWORD: ${DB_PASSWORD:-statsense}
+      DB_HOST: db
+      DB_PORT: "5432"
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
+      DEBUG: ${DEBUG:-0}
+      SECRET_KEY: ${SECRET_KEY:-changez-cette-valeur-en-production}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+    ports:
+      - "${PORT:-8000}:8000"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  ollama:

@@ -1,0 +1,27 @@
+# .dockerignore
+#
+# Ce qui n'a rien à faire dans l'image. Sans ce fichier, le contexte de
+# construction embarque l'environnement virtuel, node_modules et le .env de
+# développement — plusieurs centaines de mégaoctets, et des identifiants.
+
+.git
+.gitignore
+**/__pycache__
+**/*.py[cod]
+backend/.venv
+frontend/node_modules
+frontend/dist
+staticfiles
+
+# Le .env local contient les réglages de la machine de développement
+# (DB_HOST=localhost, port 5433). Les variables viennent de docker compose.
+.env
+
+# Les sauvegardes autres que le dump de démarrage.
+data/backups/*
+!data/backups/statsense.dump
+
+# Journaux et fichiers de travail
+*.log
+*.sqlite3
+.DS_Store
