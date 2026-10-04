@@ -217,7 +217,18 @@ LIBELLES_DIMENSIONS["age"].update({
 })
 LIBELLES_DIMENSIONS["age"]["Y_GE80"] = "80 ans et plus"
 
+# Cette note disait, à tort, que la somme des CINQ types donnait le taux
+# d'accès à une source améliorée. Elle a conduit à construire une série où
+# Kolda affichait 98 % en 2002 : la somme des cinq mesure la part des
+# ménages ayant une source quelconque, soit la quasi-totalité.
+#
+# Le puits non protégé est, par définition, une source NON améliorée. Le
+# taux d'accès est donc la somme des quatre autres, et c'est ce que
+# construit sdmx21.TOTAL_A_CONSTRUIRE.
 AVERTISSEMENTS["acces_eau"] = (
-    "Les cinq types de source sont exclusifs ; leur somme donne le taux "
-    "d'accès global à une source améliorée."
+    "Les cinq types de source sont exclusifs et couvrent l'ensemble des "
+    "ménages. Le taux d'accès affiché sans ventilation est la somme des "
+    "quatre sources améliorées — robinet dans le logement, robinet public, "
+    "puits avec pompe, puits protégé — calculée au chargement ; le puits "
+    "non protégé en est exclu, n'étant pas une source améliorée."
 )

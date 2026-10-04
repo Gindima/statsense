@@ -127,6 +127,13 @@ SEUIL_CONFIANCE = 0.4
 # régression d'un tirage.
 TEMPERATURE = 0.0
 
+# Seconde tentative après une réponse illisible : il faut un tirage
+# DIFFÉRENT. À température 0, rejouer le même prompt reproduirait la même
+# sortie fautive — une nouvelle tentative qui ne peut pas différer n'en
+# est pas une. La reproductibilité des tests est préservée : seul le
+# premier essai est déterministe, et c'est lui que les tests observent.
+TEMPERATURE_RETENTATIVE = 0.2
+
 
 def _extraire(question, candidats):
     """
@@ -138,13 +145,19 @@ def _extraire(question, candidats):
     plateforme utilisable, et réessayer ne servirait à rien.
 
     Une réponse ILLISIBLE — JSON tronqué, mal échappé, absent — est une
-    génération ratée alors que le modèle répondait. Elle a droit au même
-    second essai qu'un plan invalide, et par le même chemin :
-    `prompt_correction`. Le prompt doit changer, car à température 0 le
-    même prompt redonne la même sortie fautive.
+    génération ratée alors que le modèle répondait. On rejoue le MÊME
+    prompt, à température non nulle pour obtenir un autre tirage. Lui
+    donner `prompt_correction` serait une erreur : ce prompt est fait
+    pour corriger un plan mal rempli, il montre au modèle un plan vide et
+    un message du genre « Unterminated string » — aucune information
+    exploitable — et il ne reporte pas les fiches d'indicateurs, si bien
+    que le modèle n'a plus de catalogue sous les yeux et ne peut nommer
+    personne. Mesuré : la seconde tentative rendait alors
+    `indicateur: null`.
 
-    Un plan INVALIDE est une réponse lisible mais hors contrat. Second
-    essai également, avec l'erreur réinjectée.
+    Un plan INVALIDE est une réponse lisible mais hors contrat. Là, le
+    contenu EST la cause, et `prompt_correction` est le bon outil : il
+    réinjecte le plan fautif et l'erreur.
 
     Après deux réponses inexploitables, on demande une précision. Deviner
     l'intention serait pire que les trois.
@@ -158,9 +171,12 @@ def _extraire(question, candidats):
 
     for tentative in (1, 2):
         try:
-            reponse = c.completer(prompt, systeme=SYSTEME_EXTRACTION,
-                                  json_attendu=True, max_tokens=300,
-                                  temperature=TEMPERATURE)
+            reponse = c.completer(
+                prompt, systeme=SYSTEME_EXTRACTION, json_attendu=True,
+                max_tokens=300,
+                temperature=TEMPERATURE if tentative == 1
+                else TEMPERATURE_RETENTATIVE,
+            )
             brut = extraire_json(reponse)
             return valider(brut), {
                 "origine": "modele",
@@ -175,28 +191,42 @@ def _extraire(question, candidats):
                 "origine": "repli", "raison": str(e),
             }
 
-        except (ReponseIllisible, PlanInvalide) as e:
+        except ReponseIllisible as e:
             if tentative == 1:
-                # Le prompt doit changer : à température 0, le même prompt
-                # redonnerait la même réponse fautive.
-                logger.info("Réponse rejetée (%s), seconde tentative", e)
+                # Même prompt — il porte les fiches d'indicateurs, et les
+                # perdre coûterait l'indicateur. Seule la température
+                # change, pour obtenir un autre tirage.
+                logger.info("Réponse illisible (%s), nouveau tirage", e)
+                continue
+            return _plan_inexploitable(e)
+
+        except PlanInvalide as e:
+            if tentative == 1:
+                # Ici le contenu est la cause : on le réinjecte.
+                logger.info("Plan hors contrat (%s), correction", e)
                 prompt = prompt_correction(question, brut or {}, str(e))
                 continue
-            # Deux réponses inexploitables : on demande une précision
-            # plutôt que de retenir un indicateur approchant.
-            logger.warning("Plan inexploitable après deux essais : %s", e)
-            return {
-                "methode": "valeur_simple", "indicateur": None,
-                "zones": [], "niveau": None,
-                "periode": {"debut": None, "fin": None},
-                "filtres": {}, "dimension": None, "top_n": None,
-                "ordre": "desc", "confiance": 0.0,
-                "clarification": "Je n'ai pas réussi à interpréter cette "
-                                 "demande. Reformulez-la, ou choisissez "
-                                 "un indicateur ci-dessous.",
-            }, {"origine": "echec", "raison": str(e)}
+            return _plan_inexploitable(e)
 
     return repli(question, candidats), {"origine": "repli"}
+
+
+def _plan_inexploitable(e):
+    """
+    Deux réponses inexploitables : on demande une précision plutôt que de
+    retenir un indicateur approchant.
+    """
+    logger.warning("Plan inexploitable après deux essais : %s", e)
+    return {
+        "methode": "valeur_simple", "indicateur": None,
+        "zones": [], "niveau": None,
+        "periode": {"debut": None, "fin": None},
+        "filtres": {}, "dimension": None, "top_n": None,
+        "ordre": "desc", "confiance": 0.0,
+        "clarification": "Je n'ai pas réussi à interpréter cette "
+                         "demande. Reformulez-la, ou choisissez "
+                         "un indicateur ci-dessous.",
+    }, {"origine": "echec", "raison": str(e)}
 
 
 def _refus(message, motif, alternatives=None, plan=None, meta=None):

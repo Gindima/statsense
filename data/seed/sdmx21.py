@@ -65,6 +65,65 @@ Cette règle ne s'applique QU'AUX EFFECTIFS. Un taux ou un indice ne
 s'additionne pas entre modalités : un chômage national de 20,4 % avec
 8 % chez les hommes et 23 % chez les femmes est une moyenne pondérée,
 parfaitement cohérente, et la lui appliquer produirait 31 %.
+
+
+DES TOTAUX QUI N'EXISTENT PAS DU TOUT
+
+Problème symétrique, découvert sur eau_ameliore.xml :
+
+    observations                        539
+    lignes sans aucune ventilation        0
+    périodes disponibles pour Kolda      []
+
+Chaque série porte un type de source — robinet dans le logement, robinet
+public, puits avec pompe, puits protégé, puits non protégé — et le fichier
+n'écrit jamais `INDICATEURS = _T`. Il n'y a donc aucune ligne de total à
+retirer, et aucune à lire : « Comment l'accès à l'eau a-t-il évolué à
+Kolda ? » ne trouvait rien, alors que le catalogue annonce la série sur
+2002-2023.
+
+Le total est calculable, mais pas en sommant tout — et c'est l'erreur qui
+a été commise puis corrigée ici, parce qu'elle est instructive.
+
+Première version : sommer les cinq types, en s'appuyant sur une note
+affirmant que « les cinq types sont exclusifs, leur somme donne le taux
+d'accès global à une source améliorée ». Résultat obtenu pour Kolda :
+
+    2002 : 98,0 %        2023 : 96,9 %
+
+Invraisemblable, et dans le mauvais sens. La note était fausse. Les cinq
+modalités sont bien exclusives et exhaustives, mais la cinquième — puits
+NON protégé — n'est pas une source améliorée, c'en est la définition
+inverse. Sommer les cinq donne donc la part des ménages dont la source
+principale figure dans la liste, soit ≈ 100 %. Ce n'était pas un taux
+d'accès, c'était presque la totalité des ménages.
+
+Règle retenue : la table nomme les MODALITÉS à sommer, et non seulement la
+dimension. Une dimension exclusive ne dit pas quelles modalités comptent,
+et laisser ce choix implicite est précisément ce qui a permis l'erreur.
+Pour l'eau, les quatre sources améliorées sont sommées et le puits non
+protégé est écarté.
+
+Trois précautions, parce qu'un chiffre construit engage davantage qu'un
+chiffre lu :
+
+  1. les modalités retenues sont écrites, une par une, et la somme ne
+     porte que sur elles ;
+
+  2. seuls les groupes portant TOUTES les modalités retenues sont sommés.
+     Si une région-année n'en publie que trois sur quatre, la somme
+     sous-estimerait le total, et un chiffre sous-estimé est pire qu'une
+     absence. Ces groupes restent sans total, et leur nombre est rapporté ;
+
+  3. les autres ventilations sont conservées : sommer les types à milieu
+     constant donne le taux d'accès urbain, puis rural. Sommer ENTRE
+     milieux n'aurait aucun sens, deux taux ne s'additionnant pas sans
+     pondération.
+
+Un dernier mot sur ce qui aurait dû alerter plus tôt : un taux construit
+qui frôle 100 % sur toutes les zones et toutes les années ne mesure rien.
+Le contrôle de vraisemblance appartient à la revue, pas au code — mais il
+appartient à quelqu'un.
 """
 
 import xml.etree.ElementTree as ET
@@ -106,6 +165,34 @@ FICHIERS = {
 # N'ajouter ici que des dénombrements : jamais un taux, un indice ni un
 # pourcentage.
 TOTAL_PAR_SOMME = {"population"}
+
+# Fichiers dont la source ne publie AUCUN total : il est construit par somme
+# des modalités NOMMÉES ci-dessous.
+#
+# Nommer les modalités n'est pas une précaution de style. Les cinq types de
+# source d'eau sont exclusifs et exhaustifs, mais le puits non protégé
+# n'est pas une source améliorée : les sommer tous donnait 98 % à Kolda, ce
+# qui mesurait la part des ménages ayant une source — n'importe laquelle —
+# et non l'accès à l'eau améliorée.
+#
+# Avant d'ajouter une entrée ici, il faut donc pouvoir écrire quelles
+# modalités composent la grandeur visée, et vérifier l'ordre de grandeur du
+# résultat. Les tranches d'âge de population.xml ne qualifient pas : les
+# 60-64 ans ne figurent dans aucune tranche publiée, donc aucune somme de
+# tranches ne donne un total.
+TOTAL_A_CONSTRUIRE = {
+    "eauameliore": {
+        "dimension": "type",
+        # Les quatre sources améliorées, au sens de la définition
+        # internationale : adduction dans le logement, borne-fontaine,
+        # forage équipé d'une pompe, puits protégé.
+        "retenues": ("EAU_ROBINET_LOG", "EAU_ROBINET_PUB",
+                     "EAU_PUIT_POMPE", "EAU_PUIT_PROT"),
+        # Écartée : puits non protégé. C'est la définition même d'une
+        # source NON améliorée.
+        "ecartees": ("EAU_PUIT_NON_PROT",),
+    },
+}
 
 # Écart relatif au-delà duquel un total est jugé incompatible avec la somme
 # de ses composantes. 0,5 % absorbe les arrondis de publication.
@@ -232,7 +319,7 @@ class ChargeurSDMX21:
         Remplace un total « tous sexes » par la somme des sexes lorsque les
         deux sont incompatibles.
 
-        `mesures` : (zone, periode, cle_dims) -> (dims, valeur), où
+        `mesures` : (zone, periode, cle_dims) -> (dims, valeur, sexe), où
         cle_dims est le tuple trié des ventilations. La comparaison ne
         porte que sur les cellules SANS autre ventilation que le sexe :
         comparer un total toutes tranches d'âge à une somme par sexe d'une
@@ -272,6 +359,83 @@ class ChargeurSDMX21:
                 f"{v['F'][1]:,.0f} femmes ; retenu {somme:,.0f}"
                 .replace(",", " ")
             )
+
+    @staticmethod
+    def _construire_totaux(mesures, config, compteur):
+        """
+        Crée le total absent de la source, par somme des modalités NOMMÉES
+        dans la configuration.
+
+        `config` : {"dimension": …, "retenues": (…), "ecartees": (…)}.
+        Seules les modalités `retenues` entrent dans la somme. Celles qui
+        sont `ecartees` ne sont là que pour la documentation et le rapport
+        de chargement : elles existent dans les données et sont
+        délibérément laissées de côté.
+
+        Les autres ventilations sont conservées : à milieu constant, la
+        somme des types donne le taux d'accès de ce milieu. Sommer entre
+        milieux n'aurait pas de sens, deux taux ne s'additionnant pas sans
+        pondération.
+
+        Seuls les groupes portant TOUTES les modalités retenues sont
+        sommés. Un groupe partiel produirait un total sous-estimé, c'est-à-
+        dire une réponse fausse donnée avec aplomb.
+        """
+        dimension = config["dimension"]
+        retenues = set(config["retenues"])
+        if len(retenues) < 2:
+            return
+
+        presentes = {dims[dimension]
+                     for (_, _, _), (dims, _, _) in mesures.items()
+                     if dimension in dims}
+        absentes = retenues - presentes
+        if absentes:
+            # Une modalité déclarée mais introuvable signale un décalage
+            # entre la table et le fichier : mieux vaut ne rien construire
+            # que de sommer ce qui reste.
+            compteur.erreur(
+                0, f"modalités déclarées absentes du fichier pour "
+                   f"« {dimension} » : {sorted(absentes)} — aucun total "
+                   f"construit")
+            return
+
+        groupes = defaultdict(dict)
+        for (zone, periode, _cle), (dims, valeur, _sexe) in mesures.items():
+            modalite = dims.get(dimension)
+            if modalite not in retenues:
+                continue
+            autres = {k: v for k, v in dims.items() if k != dimension}
+            reference = (zone, periode, tuple(sorted(autres.items())))
+            groupes[reference][modalite] = (valeur, autres)
+
+        construits = incomplets = 0
+        for reference, parts in groupes.items():
+            if set(parts) != retenues:
+                incomplets += 1
+                continue
+            if reference in mesures:
+                continue            # la source publie déjà ce total
+            autres = next(iter(parts.values()))[1]
+            mesures[reference] = (
+                dict(autres),
+                sum(valeur for valeur, _ in parts.values()),
+                None,
+            )
+            construits += 1
+
+        if not construits and not incomplets:
+            return
+
+        detail = (f"total construit pour {construits} cellule(s), par somme "
+                  f"de {len(retenues)} modalités de « {dimension} » : "
+                  f"{', '.join(sorted(retenues))}")
+        if config.get("ecartees"):
+            detail += f" ; écartée(s) : {', '.join(config['ecartees'])}"
+        if incomplets:
+            detail += (f" ; {incomplets} groupe(s) incomplet(s) laissé(s) "
+                       f"sans total")
+        compteur.correction(detail)
 
     # -- point d'entrée --------------------------------------------------
 
@@ -332,6 +496,10 @@ class ChargeurSDMX21:
 
         if cle_fichier in TOTAL_PAR_SOMME:
             self._corriger_totaux(mesures, compteur)
+
+        config = TOTAL_A_CONSTRUIRE.get(cle_fichier)
+        if config:
+            self._construire_totaux(mesures, config, compteur)
 
         lot = [
             Observation(indicateur=ind, zone=zone, periode=periode,
