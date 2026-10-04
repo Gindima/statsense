@@ -88,7 +88,12 @@ class ClientOllama(ClientLLM):
     traitement souverain est un critère.
     """
 
-    def __init__(self, hote=None, modele=None, timeout=180):
+    # 300 secondes, et non 180 : la même valeur que `gunicorn --timeout`.
+    # Un client qui renonce avant son serveur transforme une attente longue
+    # en panne. Mesuré sur le chargement du modèle en mémoire après un
+    # démarrage d'Ollama : 107 s, 146 s, et une fois au-delà de 180 s — la
+    # première question était alors perdue et basculait au repli.
+    def __init__(self, hote=None, modele=None, timeout=300):
         self.hote = (hote or getattr(settings, "OLLAMA_HOST",
                                      "http://localhost:11434")).rstrip("/")
         self.modele = modele or getattr(settings, "OLLAMA_MODEL",

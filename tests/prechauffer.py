@@ -122,7 +122,7 @@ def _hote_et_modele():
 
 def verifier_modele():
     """
-    Le modèle est-il joignable et chargé ?
+    Le modèle est-il joignable et présent sur disque ?
 
     Vérifié AVANT la première question, parce qu'un modèle absent ne fait
     pas échouer la chaîne : elle se replie, répond, et le préchauffage
@@ -142,6 +142,35 @@ def verifier_modele():
         return False, (f"{modele} absent de {hote}. "
                        f"Modèles présents : {noms or 'aucun'}.")
     return True, f"{modele} disponible sur {hote}"
+
+
+def chauffer_modele():
+    """
+    Force le chargement du modèle en mémoire, par une génération d'un seul
+    token.
+
+    `/api/tags` dit que le modèle existe SUR DISQUE. Il ne dit pas qu'il est
+    chargé. Et le chargement de 2,2 Go sur processeur prend entre une et
+    trois minutes : la première vraie question le payait, et une fois elle
+    a dépassé le délai du client —
+
+        Read timed out (read timeout=180) → repli déterministe
+        ✗ 1. Combien d'habitants compte la région de Thiès ?
+
+    La première question d'une démonstration n'a pas à être la victime du
+    démarrage. C'est ici que cette attente doit être absorbée, et c'est
+    aussi ici qu'elle doit être mesurée : le chiffre affiché est celui que
+    paiera la première question si l'on oublie de préchauffer.
+    """
+    from ai.client import ErreurLLM, client
+
+    debut = time.perf_counter()
+    try:
+        client().completer("ok", json_attendu=False, max_tokens=1,
+                           temperature=0)
+    except ErreurLLM as e:
+        return False, f"chargement impossible : {e}"
+    return True, f"modèle chargé en mémoire en {time.perf_counter() - debut:.0f}s"
 
 
 def purger():
@@ -169,6 +198,12 @@ print()
 disponible, detail = verifier_modele()
 print(f"  {detail}")
 if not disponible:
+    print("\n  ✗ Préchauffage abandonné : rien n'a été écrit en cache.\n")
+    sys.exit(1)
+
+chaud, detail = chauffer_modele()
+print(f"  {detail}")
+if not chaud:
     print("\n  ✗ Préchauffage abandonné : rien n'a été écrit en cache.\n")
     sys.exit(1)
 

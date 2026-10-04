@@ -59,6 +59,7 @@ from .donnees import (
     verifier_granularite,
     zone_par_nom,
 )
+from .avertissements import avertissements_pour
 from .equivalences import serie_equivalente
 from .resultats import AnalysisResult, ErreurAnalyse, source_de
 from .repartition import repartition  # noqa: E402
@@ -441,6 +442,29 @@ def _plan_relais(plan, remplacant):
     }
 
 
+def _annoter_avertissements(resultat, code, plan):
+    """
+    Ajoute les limites méthodologiques des données employées.
+
+    Placé dans `executer()` plutôt que dans chaque méthode : les cinq
+    méthodes y passent, et une sixième en bénéficiera sans qu'on y pense.
+
+    Les notes vont en FIN de liste. Celles produites par la méthode —
+    agrégation, glissement annuel, zones manquantes — décrivent ce calcul-ci
+    et viennent d'abord ; les limites des données valent pour toute question
+    posée à cette série.
+    """
+    for note in avertissements_pour(
+        code,
+        methode=plan.get("methode"),
+        dimension=plan.get("dimension"),
+        filtres=plan.get("filtres"),
+    ):
+        if note not in resultat.notes:
+            resultat.notes.append(note)
+    return resultat
+
+
 def _annoter_relais(resultat, plan, premiere, remplacant):
     """
     Inscrit le relais dans le résultat.
@@ -458,7 +482,10 @@ def _annoter_relais(resultat, plan, premiere, remplacant):
     resultat.meta["serie_demandee"] = plan.get("indicateur")
     resultat.meta["serie_relais"] = remplacant.code
     resultat.meta["motif_relais"] = premiere.motif
-    return resultat
+
+    # Les avertissements portent sur la série qui a RÉPONDU, pas sur celle
+    # qui était demandée : c'est de ses limites que le lecteur a besoin.
+    return _annoter_avertissements(resultat, remplacant.code, plan)
 
 
 def _refus_complete(premiere, remplacant, seconde):
@@ -521,7 +548,7 @@ def executer(plan):
         )
 
     try:
-        return fn(plan)
+        resultat = fn(plan)
     except ErreurAnalyse as premiere:
         if premiere.motif not in MOTIFS_RELAYABLES:
             raise
@@ -539,3 +566,5 @@ def executer(plan):
             raise _refus_complete(premiere, remplacant, seconde) from None
 
         return _annoter_relais(resultat, plan, premiere, remplacant)
+
+    return _annoter_avertissements(resultat, plan.get("indicateur"), plan)

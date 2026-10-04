@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .env
+.env.prod
 data/backups/
 node_modules/
 dist/
