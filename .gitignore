@@ -1,8 +1,46 @@
+# Environnements Python
 .venv/
+venv/
 __pycache__/
 *.pyc
+*.pyo
+
+# Secrets. `.env.exemple` est suivi, lui : c'est le modèle à copier.
 .env
 .env.prod
-data/backups/
+.env.local
+
+# Sauvegardes de base.
+#
+# On exclut le CONTENU du dossier, pas le dossier lui-même : git ne sait pas
+# réinclure un fichier dont le dossier parent est exclu, et `data/backups/`
+# faisait donc disparaître le dump du dépôt.
+#
+# Or le dump est un livrable, pas un artefact de travail. Il porte les
+# données ET le cache des questions préchauffées, et l'entrypoint le
+# préfère au chargement complet : avec lui le déploiement est prêt en
+# quelques secondes et les questions de démonstration répondent
+# instantanément ; sans lui, deux minutes de chargement et trente secondes
+# par question.
+data/backups/*
+!data/backups/statsense.dump
+
+# Node et build du frontend
 node_modules/
 dist/
+.vite/
+
+# Django
+staticfiles/
+*.sqlite3
+*.log
+
+# Résidus de téléchargement Windows et fichiers système
+*:Zone.Identifier
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.idea/
+.vscode/
+*.swp
