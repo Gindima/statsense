@@ -54,6 +54,17 @@ PAR_INDICATEUR = {
         "Série irrégulière : onze points entre 1997 et 2023. Les écarts "
         "entre deux points ne sont pas comparables à un rythme annuel."
     ),
+    # Le dénominateur est la zone PARENTE, pas le pays : la part d'une
+    # commune se lit dans son département, celle d'un département dans sa
+    # région. Un lecteur comprend spontanément « part du Sénégal », et il
+    # n'aurait raison que pour une région. Relevé lors d'une revue externe,
+    # qui a posé exactement cette question.
+    "part_population": (
+        "Part calculée par rapport à la zone immédiatement supérieure, et "
+        "non par rapport au Sénégal : la part d'une commune est sa part "
+        "dans son département, celle d'un département sa part dans sa "
+        "région. Pour une région, la zone supérieure est le pays."
+    ),
     "taux_natalite": (
         "Série irrégulière : dix-sept points entre 1992 et 2025."
     ),
