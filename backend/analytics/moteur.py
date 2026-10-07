@@ -43,8 +43,45 @@ rien à chercher ailleurs.
 
 Voir equivalences.py pour la table et pour la raison qui fait de ce relais
 une nécessité et non un choix fait à la place de l'utilisateur.
+
+
+LES TROUS DANS UNE SÉRIE TEMPORELLE
+
+Constaté sur « Comment le chômage a-t-il évolué entre 2015 et 2025 ? » :
+la courbe rendait dix points, sautait 2020, et ne le disait pas. Le
+segment tracé entre 2019 et 2021 n'était pas une mesure, mais il se
+lisait comme telle — et sur l'année du Covid, l'erreur d'interprétation
+est exactement celle qu'un lecteur ferait.
+
+La note existante ne pouvait pas le voir. Elle compare le nombre de
+points obtenus au nombre de périodes demandées, or `_intervalle` ne
+retient que des périodes EXISTANTES : une année absente du catalogue
+n'entre jamais dans l'intervalle, les deux comptes restent égaux, et le
+trou passe.
+
+Le trou ne se mesure donc pas par rapport à ce qui existe, mais par
+rapport à la CADENCE que la série se donne à elle-même : `_trous()`
+déduit le pas de l'écart minimal observé entre deux points, reconstruit
+la grille attendue, et nomme ce qui manque.
+
+Reste à ne pas confondre deux faits de nature différente :
+
+    une série régulière à trou      annuelle, 2020 manquante
+                                    -> le trou est une anomalie, on le nomme
+
+    une série irrégulière           onze enquêtes entre 1997 et 2023
+                                    -> l'écart est la nature de la série,
+                                       et `avertissements.py` le dit déjà
+
+La frontière est quantitative, donc vérifiable : si plus d'un quart des
+points attendus manquent, la cadence déduite ne décrit pas la série, et
+rien n'est conclu. Mesuré sur le catalogue — chômage annuel 2015-2025
+avec 2020 manquante : 9 % de points absents, nommé ; `indice_bienetre`,
+onze points sur vingt-sept : 59 %, écarté ; `taux_natalite`, dix-sept
+points sur trente-quatre : 50 %, écarté.
 """
 
+import re
 from decimal import Decimal
 
 from geography.models import Niveau, Zone
@@ -67,6 +104,13 @@ from .repartition import repartition  # noqa: E402
 TOP_N_DEFAUT = 10
 MAX_LIGNES = 60
 
+# Au-delà de cette proportion de points absents, la cadence déduite ne
+# décrit pas la série : c'est une série irrégulière, pas une série à trous.
+PROPORTION_TROUS_MAX = 0.25
+
+# Nombre de périodes nommées dans une note avant de couper.
+TROUS_NOMMES_MAX = 6
+
 # Motifs pour lesquels une série équivalente mérite d'être essayée : dans
 # les trois cas, la demande est recevable et c'est la couverture de la
 # série qui fait défaut.
@@ -75,6 +119,9 @@ MOTIFS_RELAYABLES = {
     "serie_trop_courte",
     "indicateur_vide",
 }
+
+RE_ANNEE = re.compile(r"^(\d{4})$")
+RE_TRIMESTRE = re.compile(r"^(\d{4})-Q([1-4])$")
 
 
 # --- outils communs --------------------------------------------------------
@@ -125,6 +172,95 @@ def _intervalle(ind, plan):
     # Le tri lexicographique de « 2023 » et « 2026-Q1 » est chronologique.
     retenues = [x for x in dispo if debut <= x <= fin]
     return retenues or dispo
+
+
+def _rang(periode):
+    """
+    (nature, rang) d'une période, ou (None, None) si le format est inconnu.
+
+    Le rang est un entier sur lequel l'arithmétique est exacte : l'année
+    elle-même pour une série annuelle, le numéro absolu du trimestre pour
+    une série trimestrielle. Il permet de raisonner sur les écarts sans
+    manipuler de dates, dont la plateforme n'a pas besoin.
+
+    Un format inconnu ne provoque jamais d'erreur : il fait seulement
+    renoncer au contrôle. Mieux vaut une note absente qu'une note fausse.
+    """
+    texte = str(periode or "")
+
+    m = RE_ANNEE.match(texte)
+    if m:
+        return "annee", int(m.group(1))
+
+    m = RE_TRIMESTRE.match(texte)
+    if m:
+        return "trimestre", int(m.group(1)) * 4 + int(m.group(2)) - 1
+
+    return None, None
+
+
+def _periode_du_rang(nature, rang):
+    """Opération inverse de `_rang`, pour nommer un trou dans la série."""
+    if nature == "annee":
+        return str(rang)
+    return f"{rang // 4}-Q{rang % 4 + 1}"
+
+
+def _est_une_periode(valeur_brute):
+    """Une valeur de plan est-elle une période, et non « actuel » ?"""
+    return _rang(valeur_brute)[0] is not None
+
+
+def _trous(periodes):
+    """
+    Périodes absentes d'une série qui devrait être régulière.
+
+    Le pas est celui que la série se donne : l'écart minimal observé entre
+    deux points consécutifs. La grille attendue en découle, et ce qui n'y
+    figure pas est un trou.
+
+    Retourne une liste vide dès qu'il y a un doute — format inconnu,
+    natures mélangées, moins de trois points, ou série trop irrégulière
+    pour qu'une cadence ait un sens. Cette fonction ne sert qu'à produire
+    une note : son silence est sans conséquence, une note fausse ne
+    l'aurait pas été.
+    """
+    rangs, natures = [], set()
+    for p in periodes:
+        nature, rang = _rang(p)
+        if nature is None:
+            return []
+        natures.add(nature)
+        rangs.append(rang)
+
+    # Deux points ne révèlent aucune cadence : l'écart qui les sépare est
+    # le pas par construction, et la grille n'a pas de trou.
+    if len(natures) != 1 or len(rangs) < 3:
+        return []
+
+    nature = natures.pop()
+    rangs = sorted(set(rangs))
+    pas = min(b - a for a, b in zip(rangs, rangs[1:]))
+    if pas <= 0:
+        return []
+
+    attendus = list(range(rangs[0], rangs[-1] + 1, pas))
+    presents = set(rangs)
+    manquants = [r for r in attendus if r not in presents]
+
+    if not manquants:
+        return []
+    if len(manquants) / len(attendus) > PROPORTION_TROUS_MAX:
+        return []
+
+    return [_periode_du_rang(nature, r) for r in manquants]
+
+
+def _enumerer(periodes):
+    """Liste lisible, coupée au-delà de `TROUS_NOMMES_MAX`."""
+    if len(periodes) <= TROUS_NOMMES_MAX:
+        return ", ".join(periodes)
+    return ", ".join(periodes[:TROUS_NOMMES_MAX]) + "…"
 
 
 def _prepare(plan):
@@ -289,14 +425,52 @@ def evolution(plan):
 
     notes = []
 
-    # La période demandée peut précéder le début de la série. Le dire, plutôt
-    # que de laisser croire que la courbe couvre ce qui a été demandé : une
-    # courbe qui commence silencieusement neuf ans trop tard est un
-    # mensonge par omission.
-    demande = (plan.get("periode") or {}).get("debut")
-    if demande and str(demande) < serie[0]["periode"]:
-        notes.append(f"Période demandée à partir de {demande} ; la série "
-                     f"commence en {serie[0]['periode']}.")
+    # La période demandée peut précéder le début de la série, ou dépasser sa
+    # fin. Le dire, plutôt que de laisser croire que la courbe couvre ce qui
+    # a été demandé : une courbe qui commence silencieusement neuf ans trop
+    # tard est un mensonge par omission.
+    #
+    # Le contrôle de format n'est pas décoratif : `fin` peut valoir
+    # « actuel », et la comparaison de chaînes placerait « actuel » après
+    # « 2025 », produisant une note sur une période qui n'en est pas une.
+    p = (plan.get("periode") or {})
+    debut_demande, fin_demandee = p.get("debut"), p.get("fin")
+
+    if _est_une_periode(debut_demande) \
+            and str(debut_demande) < serie[0]["periode"]:
+        notes.append(f"Période demandée à partir de {debut_demande} ; la "
+                     f"série commence en {serie[0]['periode']}.")
+
+    if _est_une_periode(fin_demandee) \
+            and str(fin_demandee) > serie[-1]["periode"]:
+        notes.append(f"Période demandée jusqu'à {fin_demandee} ; la série "
+                     f"s'arrête en {serie[-1]['periode']}.")
+
+    # Périodes présentes au catalogue mais sans valeur pour CETTE zone :
+    # l'information est plus précise que celle d'un trou, puisque d'autres
+    # zones ont la donnée.
+    obtenues = {l["periode"] for l in serie}
+    absentes = [x for x in periodes if x not in obtenues]
+    if absentes:
+        notes.append(f"{len(absentes)} période(s) de l'intervalle sans "
+                     f"donnée pour {zone.nom}, omises de la courbe : "
+                     f"{_enumerer(absentes)}.")
+
+    # Trous de la série elle-même : l'année manque pour toutes les zones et
+    # n'est donc pas dans l'intervalle. Les périodes déjà signalées
+    # ci-dessus sont retirées, pour ne pas dire deux fois la même chose.
+    trous = [t for t in _trous([l["periode"] for l in serie])
+             if t not in absentes]
+    if trous:
+        if len(trous) == 1:
+            notes.append(f"Aucune donnée pour {trous[0]} : la courbe relie "
+                         f"directement les deux points voisins, et ce "
+                         f"segment ne correspond à aucune mesure.")
+        else:
+            notes.append(f"Aucune donnée pour {len(trous)} périodes de "
+                         f"l'intervalle ({_enumerer(trous)}) : la courbe "
+                         f"relie directement les points voisins, et ces "
+                         f"segments ne correspondent à aucune mesure.")
 
     # RÈGLE DE SAISONNALITÉ.
     # Sur une série trimestrielle, comparer un trimestre au précédent
@@ -324,9 +498,6 @@ def evolution(plan):
         notes.append(note)
     if ind.prix_base:
         notes.append(f"Valeurs en prix {ind.prix_base}.")
-    if len(serie) < len(periodes):
-        notes.append(f"{len(periodes) - len(serie)} période(s) sans donnée, "
-                     f"omises de la courbe.")
 
     return AnalysisResult(
         lignes=serie,
@@ -338,6 +509,8 @@ def evolution(plan):
             "indicateur": ind.libelle, "zone": zone.nom,
             "debut": serie[0]["periode"], "fin": serie[-1]["periode"],
             "points": len(serie),
+            "periodes_absentes": absentes,
+            "trous": trous,
             "variation_absolue": ecart,
             "variation_pct": pct,
             "tcam_pct": tcam,

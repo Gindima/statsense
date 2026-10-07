@@ -6,7 +6,7 @@ StatSense AI — Méthode, sens du classement, nombre d'éléments
 Cinquième extraction, après les zones, les ventilations et les périodes,
 et pour la même raison : ce qui a une forme fermée revient au code.
 
-Quatre éléments sont traités ici.
+Cinq éléments sont traités ici.
 
 
 1. LA MÉTHODE
@@ -90,12 +90,48 @@ D'où le second test, sur la question elle-même : « par région », « par
 département », « par commune » écartent la répartition, quelle que soit
 la dimension proposée. Ces formulations forment une liste fermée, comme
 tout le reste de ce module.
+
+
+5. LA QUESTION AU SINGULIER
+
+    « Quelle région a la taille moyenne des ménages la plus élevée ? »
+        -> dix lignes
+
+Dix lignes à une question qui en demande une. Le singulier et le pluriel
+s'opposent sur une lettre — « quelle région » contre « quelles régions » —
+et cette lettre dit combien de réponses sont attendues. C'est une forme
+fermée, donc elle revient ici.
+
+CINQ, ET NON UNE.
+
+Rendre une seule ligne répondrait à la lettre et tromperait sur le fond.
+Sur cette question précise, les deux premières valeurs sont SÉDHIOU à
+12,10 et MATAM à 11,56 personnes par ménage : 4,5 % d'écart. Un leader
+qui n'est pas détaché. N'afficher que la tête transforme un classement
+serré en évidence, et c'est le lecteur qui paie l'approximation.
+
+Cinq lignes répondent — la première EST la réponse — et laissent voir si
+la tête se distingue. Dix noient la réponse dans son contexte, une la
+coupe de son contexte.
+
+CETTE CORRECTION PRIME SUR LE MODÈLE.
+
+Comme `ordre_cite`, et pour la même raison : la forme de la question fait
+autorité. L'ancienne version ne corrigeait `top_n` que si le modèle avait
+proposé une valeur inférieure à 2 ; un `10` proposé sur une question au
+singulier passait donc intact. L'ordre de priorité est désormais explicite
+— nombre cité dans la question, puis forme singulière, puis proposition du
+modèle, puis défaut.
 """
 
 import re
 import unicodedata
 
 TOP_N_DEFAUT = 10
+
+# Nombre d'éléments rendus à une question formulée au singulier. Voir la
+# section 5 de l'en-tête pour le choix de cinq plutôt qu'un.
+TOP_N_SINGULIER = 5
 
 # Méthodes du moteur. Déclarées ici parce que c'est ici qu'on les déduit ;
 # plan.py les importe de ce module pour valider ce que le modèle propose.
@@ -163,6 +199,32 @@ PAR_GEOGRAPHIQUE = (
     "par commune", "par communes", "par quartier", "par quartiers",
     "par zone", "par zones", "par ville", "par villes",
     "par localite", "par localites",
+)
+
+
+# Noms de zone au singulier. Au pluriel ils ne disent plus rien du nombre
+# de réponses attendues, et c'est précisément l'information cherchée.
+NOMS_ZONE_SINGULIER = (
+    "region", "departement", "commune", "arrondissement",
+    "quartier", "village", "ville", "zone", "localite",
+)
+
+_NOMS = "|".join(NOMS_ZONE_SINGULIER)
+
+# « quelle région », « quel département », « quelle est la commune ».
+#
+# `que(?:l|lle)\b` ne matche ni « quels » ni « quelles » : après « quel »
+# vient un « l », après « quelle » un « s », et dans les deux cas il n'y a
+# pas de frontière de mot. L'opposition singulier/pluriel tient donc à la
+# limite `\b`, sans liste d'exceptions.
+RE_INTERROGATIF_SINGULIER = re.compile(
+    rf"\bque(?:l|lle)\b(?:\s+est\s+(?:le|la))?\s+(?:{_NOMS})\b"
+)
+
+# « la région la plus peuplée », sans interrogatif. Même demande, autre
+# tournure.
+RE_SUPERLATIF_DEFINI = re.compile(
+    rf"\b(?:le|la)\s+(?:{_NOMS})\s+(?:le|la)\s+(?:plus|moins)\b"
 )
 
 
@@ -235,6 +297,22 @@ def nombre_cite(question):
     return None
 
 
+def interrogatif_singulier(question):
+    """
+    La question demande-t-elle UNE zone, et non plusieurs ?
+
+    « Quelle région a la taille moyenne la plus élevée ? » attend une
+    réponse ; « Quelles régions sont les moins peuplées ? » en attend
+    plusieurs. Le nombre voulu est dans la question, à une lettre près.
+
+    Vrai n'entraîne pas une seule ligne mais cinq : voir la section 5 de
+    l'en-tête.
+    """
+    texte = _norm(question)
+    return bool(RE_INTERROGATIF_SINGULIER.search(texte)
+                or RE_SUPERLATIF_DEFINI.search(texte))
+
+
 def decoupage_geographique(question):
     """La question demande-t-elle un découpage par zone plutôt qu'une
     ventilation ?"""
@@ -285,11 +363,24 @@ def corriger_cadrage(plan, question):
             plan["niveau"] = "region"
 
     # --- nombre d'éléments ---
+    #
+    # Priorité décroissante, et chaque niveau dit pourquoi il passe avant
+    # le suivant :
+    #
+    #   1. un nombre cité       la question le dit en chiffres
+    #   2. la forme singulière  la question le dit en grammaire
+    #   3. le plan du modèle    il a pu lire « une poignée de régions »
+    #   4. le défaut            personne n'a rien dit
+    #
+    # Les deux premiers priment sur le modèle : ce sont des formes fermées,
+    # et c'est tout l'objet de ce module.
     if plan.get("methode") == "classement":
         plan["niveau"] = plan.get("niveau") or "region"
         n = nombre_cite(question)
         if n is not None:
             plan["top_n"] = n
+        elif interrogatif_singulier(question):
+            plan["top_n"] = TOP_N_SINGULIER
         elif not plan.get("top_n") or int(plan["top_n"]) < 2:
             # Le modèle produit « 1 » en l'absence de nombre dans la
             # question, et valider() ne corrige que les valeurs nulles.
