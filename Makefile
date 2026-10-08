@@ -72,14 +72,7 @@ TAR_MODELE := data/backups/ollama.tar
 # --- sauvegarde et restauration de la base ---------------------------------
 
 dump:            ## Sauvegarde la base chargée, pour un démarrage sans seed
-	@mkdir -p data/backups
-	@docker exec statsense_db pg_dump \
-	    --username=statsense --dbname=statsense \
-	    --format=custom --data-only --no-owner --no-privileges \
-	    > $(DUMP)
-	@echo "  $(DUMP) — $$(du -h $(DUMP) | cut -f1)"
-	@echo "  À committer : c'est lui qui évite trois minutes de chargement"
-	@echo "  au démarrage du conteneur."
+	@./docker/dump.sh
 
 restaure:        ## Restaure le dump dans la base locale
 	@PGPASSWORD=statsense pg_restore \
