@@ -135,8 +135,9 @@ TOP_N_SINGULIER = 5
 
 # Méthodes du moteur. Déclarées ici parce que c'est ici qu'on les déduit ;
 # plan.py les importe de ce module pour valider ce que le modèle propose.
+
 METHODES = {"valeur_simple", "classement", "evolution", "geographique",
-            "repartition"}
+            "repartition", "comparaison"}
 
 # Ce que la question dit de la méthode. Du plus spécifique au plus
 # général : la première famille qui matche décide.
@@ -319,6 +320,72 @@ def decoupage_geographique(question):
     texte = f" {_norm(question)} "
     return any(f" {m}" in texte for m in PAR_GEOGRAPHIQUE)
 
+# « Quelle région compte le moins d'habitants ? » : un nom de zone
+# interrogé, avec un superlatif, demande un classement.
+RE_QUEL_ZONE = re.compile(
+    rf"\bque(?:l|lle)s?\b(?:\s+est\s+(?:le|la))?\s+({_NOMS})s?\b")
+
+# « les départements de la région de Dakar » : une liste de zones.
+RE_ZONES_LISTEES = re.compile(
+    r"\b(?:les|des|aux|chaque)\s+(region|departement|commune|quartier)s?"
+    r"\s+(?:de|du|d)\b")
+
+NIVEAU_DU_NOM = {"village": "quartier", "ville": "commune",
+                 "localite": "quartier", "arrondissement": "departement",
+                 "zone": "region"}
+
+
+def classement_demande(question):
+    """Niveau du classement que la question demande, ou None."""
+    texte = _norm(question)
+    m = RE_QUEL_ZONE.search(texte)
+    if m and ordre_cite(question):
+        return NIVEAU_DU_NOM.get(m.group(1), m.group(1))
+    m = RE_ZONES_LISTEES.search(texte)
+    if m:
+        return m.group(1)
+    return None
+
+
+def deux_sexes(question):
+    """La question nomme-t-elle les hommes ET les femmes ?"""
+    from .filtres import MOTS
+    texte = f" {_norm(question)} "
+    vus = {v for motifs, (cle, v) in MOTS
+           if cle == "sexe" and any(f" {m} " in texte for m in motifs)}
+    return {"F", "M"} <= vus
+
+
+def corriger_comparaison(plan, question):
+    """
+    Plusieurs zones citées, ou les deux sexes : la question compare.
+
+    Constaté : « Compare la population de Dakar et de Thiès » rendait le
+    classement des communes de Dakar ; « … masculine et féminine de Dakar
+    et Thiès » la seule répartition de Dakar, Thiès disparu sans mention.
+    """
+    if plan.get("methode") not in ("valeur_simple", "classement",
+                                   "repartition", "comparaison"):
+        return plan
+
+    sexes = False
+    if deux_sexes(question) and plan.get("indicateur"):
+        from catalog.models import Indicateur
+        dims = (Indicateur.objects.filter(code=plan["indicateur"])
+                .values_list("dimensions", flat=True).first()) or []
+        sexes = "sexe" in dims
+
+    if len(plan.get("zones") or []) < 2 and not sexes:
+        return plan
+
+    plan["methode"] = "comparaison"
+    plan["dimension"] = "sexe" if sexes else None
+    plan["top_n"] = None
+    plan["niveau"] = plan.get("niveau_zone")
+    if sexes:
+        plan["filtres"] = {k: v for k, v in (plan.get("filtres") or {}).items()
+                           if k != "sexe"}
+    return plan
 
 def corriger_cadrage(plan, question):
     """
@@ -344,6 +411,14 @@ def corriger_cadrage(plan, question):
         elif plan["methode"] == "repartition":
             plan["niveau"] = plan.get("niveau") or "national"
 
+    # Une valeur simple qui demandait en fait un classement. Mesuré :
+    # « Quelle région compte le moins d'habitants ? » -> SENEGAL 18 126 342.
+    niveau_classe = classement_demande(question)
+    if plan.get("methode") == "valeur_simple" and niveau_classe:
+        plan["methode"] = "classement"
+        plan["niveau"] = niveau_classe
+
+
     # --- sens du tri ---
     sens = ordre_cite(question)
     if sens:
@@ -361,6 +436,16 @@ def corriger_cadrage(plan, question):
         if plan["niveau"] == "national":
             # Un classement national ne classerait qu'une zone.
             plan["niveau"] = "region"
+
+    # Un classement portant sur UNE zone nommée, sans superlatif ni liste,
+    # était une valeur. Constaté : « Quelle part de la population nationale
+    # vit dans la région de Dakar ? » rendait les 14 régions.
+    nommees = [z for z in plan.get("zones") or [] if z != "SENEGAL"]
+    if (plan.get("methode") == "classement" and len(nommees) == 1
+            and not niveau_classe and not ordre_cite(question)
+            and not decoupage_geographique(question)
+            and nombre_cite(question) is None):
+        plan["methode"] = "valeur_simple"
 
     # --- nombre d'éléments ---
     #
@@ -381,6 +466,7 @@ def corriger_cadrage(plan, question):
             plan["top_n"] = n
         elif interrogatif_singulier(question):
             plan["top_n"] = TOP_N_SINGULIER
+            plan["reponse_unique"] = True
         elif not plan.get("top_n") or int(plan["top_n"]) < 2:
             # Le modèle produit « 1 » en l'absence de nombre dans la
             # question, et valider() ne corrige que les valeurs nulles.

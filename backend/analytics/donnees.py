@@ -84,6 +84,52 @@ DERIVES = {
 }
 
 
+# Poids démographique. Deux lectures, toutes deux fermées :
+#   sans filtre de sexe -> part de la zone dans la zone supérieure
+#   avec un sexe        -> part de ce sexe dans la population de la zone
+# Il figurait au catalogue mais n'était calculé nulle part : toute
+# question tombait sur « aucune donnée chargée ».
+PART = "part_population"
+
+
+def _zone_superieure(zone):
+    if zone.parent_id:
+        return zone.parent
+    if zone.niveau == Niveau.NATIONAL:
+        return None
+    return Zone.objects.filter(niveau=Niveau.NATIONAL).first()
+
+
+def _valeur_part(zone, periode, filtres=None):
+    base = Indicateur.objects.filter(code="pop_totale").first()
+    if base is None:
+        return None
+    filtres = filtres or {}
+    if filtres.get("sexe"):
+        num = valeur(base, zone, periode, filtres)
+        den = valeur(base, zone, periode, {})
+    else:
+        sup = _zone_superieure(zone)
+        if sup is None:
+            return None
+        num = valeur(base, zone, periode, {})
+        den = valeur(base, sup, periode, {})
+    if num is None or not den:
+        return None
+    return _arrondir(Decimal(num) / Decimal(den) * 100)
+
+
+def modalites(ind, dimension):
+    """Modalités réellement stockées pour une dimension (sexe : H/F ou M/F)."""
+    code = "pop_totale" if ind.code == PART else (
+        DERIVES[ind.code]["composants"][0][0] if ind.code in DERIVES
+        else ind.code)
+    vals = (Observation.objects
+            .filter(indicateur__code=code, dims__has_key=dimension)
+            .values_list(f"dims__{dimension}", flat=True).distinct())
+    return sorted({v for v in vals if v})
+
+
 def get_indicateur(code):
     ind = Indicateur.objects.select_related("source").filter(code=code).first()
     if ind is None:
@@ -131,6 +177,10 @@ def periodes_disponibles(ind):
     Un indicateur dérivé n'a pas d'observation propre : ses périodes
     sont celles de ses composants.
     """
+
+    if ind.code == PART:
+        ind = Indicateur.objects.filter(code="pop_totale").first() or ind
+
     if ind.code in DERIVES:
         code, _ = DERIVES[ind.code]["composants"][0]
         comp = Indicateur.objects.filter(code=code).first()
@@ -185,6 +235,22 @@ def valeur(ind, zone, periode, filtres=None):
     Pour une liste de zones, utiliser `valeurs_par_zone`, qui fait le
     même travail en un nombre de requêtes constant.
     """
+
+    if ind.code == PART:
+        return _valeur_part(zone, periode, filtres)
+
+    # Groupe d'âge : somme exacte des tranches de 5 ans. Une tranche
+    # absente rend le total indisponible, jamais sous-estimé.
+    tranches = (filtres or {}).get("age")
+    if isinstance(tranches, (list, tuple)):
+        total = Decimal(0)
+        for t in tranches:
+            v = valeur(ind, zone, periode, {**filtres, "age": t})
+            if v is None:
+                return None
+            total += Decimal(v)
+        return total
+
     if ind.code in DERIVES:
         return _valeur_derivee(ind, zone, periode, filtres)
 
@@ -316,7 +382,14 @@ def valeurs_par_zone(ind, zones, periode, filtres=None):
 
     dims = filtres or {}
 
-    if ind.code in DERIVES:
+    if ind.code == PART:
+        if len(zones) > 100:
+            raise ErreurAnalyse(
+                "Le poids démographique se classe jusqu'au niveau du "
+                "département.", motif="granularite_indisponible")
+        valeurs = {z.id: _valeur_part(z, periode, dims) for z in zones}
+        valeurs = {k: v for k, v in valeurs.items() if v is not None}
+    elif ind.code in DERIVES:
         spec = DERIVES[ind.code]
         cartes = []
         for code, d in spec["composants"]:
@@ -375,8 +448,16 @@ def situer(zone):
         p = p.parent
     return f"{zone.nom} ({', '.join(noms)})" if noms else zone.nom
 
-def zone_par_nom(nom):
-    """Résout un nom ou un code de zone en une Zone, ou lève une erreur."""
+
+def zone_par_nom(nom, niveau=None):
+    """
+    Résout un nom ou un code de zone en une Zone, ou lève une erreur.
+
+    `niveau` est celui que la QUESTION nomme (« le département de Dakar »).
+    Sans lui, le niveau le plus large l'emporte. Constaté : « la population
+    du département de Dakar » rendait la région, 4 004 426 au lieu de
+    1 278 469.
+    """
     import unicodedata
 
     def _n(s):
@@ -394,14 +475,17 @@ def zone_par_nom(nom):
             f"communes reconnus. Précisez la commune ou le département.",
             motif="zone_inconnue",
         )
-    
+
     candidats.sort(key=lambda z: ORDRE.index(z.niveau)
                    if z.niveau in ORDRE else 99)
+    if niveau:
+        au_niveau = [z for z in candidats if z.niveau == niveau]
+        if au_niveau:
+            candidats = au_niveau
     meilleur = candidats[0]
 
-    # Plusieurs communes ou localités du même nom, sans zone plus large
-    # homonyme : on ne choisit pas au hasard. Mesuré : 1 165 noms de
-    # localités sont portés par plusieurs communes.
+    # Plusieurs communes ou localités du même nom : on ne choisit pas au
+    # hasard (1 165 noms de localités sont portés par plusieurs communes).
     memes = [z for z in candidats if z.niveau == meilleur.niveau]
     if meilleur.niveau in (Niveau.COMMUNE, Niveau.QUARTIER) \
             and len(memes) > 1:

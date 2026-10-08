@@ -121,9 +121,21 @@ def resume_factuel(question, resultat):
                   f"({n} points).")
     else:
         tete = resultat.lignes[0]
-        phrase = (f"{ind} : {n} zone(s) classée(s), "
-                  f"{tete.get('zone', '')} en tête avec "
-                  f"{_fmt(tete['valeur'])} {resultat.unite}.")
+        if m.get("unique"):
+            # « Quelle région… » attend UNE réponse : on la nomme, puis on
+            # donne les suivantes pour montrer si elle se détache.
+            sens = ("la plus faible valeur" if m.get("ordre") == "asc"
+                    else "la plus forte valeur")
+            phrase = (f"{tete.get('zone', '')} a {sens} : "
+                      f"{_fmt(tete['valeur'])} {resultat.unite} "
+                      f"({m.get('periode', '')}).")
+            suite = ", ".join(l.get("zone", "") for l in resultat.lignes[1:4])
+            if suite:
+                phrase += f" Suivent : {suite}."
+        else:
+            phrase = (f"{ind} : {n} zone(s) classée(s), "
+                      f"{tete.get('zone', '')} en tête avec "
+                      f"{_fmt(tete['valeur'])} {resultat.unite}.")
 
     if resultat.notes:
         phrase += " " + " ".join(resultat.notes)

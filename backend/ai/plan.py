@@ -193,6 +193,14 @@ def valider(brut):
     if plan["indicateur"] is None and not plan["clarification"]:
         plan["clarification"] = "Quel indicateur souhaitez-vous consulter ?"
 
+    # « Quelle part de la population… », « pourcentage », « proportion de
+    # femmes » : un pourcentage est demandé, pas un effectif.
+    MOTS_PART = ("quelle part", "part de la population", "la part de",
+                 "pourcentage", "proportion", "poids demographique")
+    if plan.get("indicateur") in ("pop_totale", "pop_region") \
+            and any(m in texte for m in MOTS_PART):
+        plan["indicateur"] = "part_population"
+
     return plan
 
 
@@ -316,10 +324,12 @@ RE_POP_SEXE = re.compile(
     r"^(?:pop|population|nombre|nb|effectif)s?(?:_totale)?_(?:des_)?"
     r"(?:femmes?|hommes?|feminine|masculine)s?$")
 
-# Mots qui demandent réellement un rapport entre les sexes.
-MOTS_RAPPORT = ("rapport", "ratio", "proportion", "equilibre", "plus d",
-                "autant", "masculinite")
 
+# « plus d'hommes que de femmes » nomme les DEUX sexes, et filtres_cites
+# ne pose alors aucun filtre : le rapport reste choisi sans ces mots.
+# « Quelle région compte le plus d'hommes ? » demande un effectif.
+MOTS_RAPPORT = ("rapport", "ratio", "proportion", "equilibre",
+                "masculinite")
 
 def corriger_indicateur(plan, question):
     """

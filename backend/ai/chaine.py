@@ -97,7 +97,6 @@ import time
 from analytics.moteur import executer
 from analytics.resultats import ErreurAnalyse
 
-from .cadrage import corriger_cadrage
 from .client import (
     ModeleInjoignable,
     ReponseIllisible,
@@ -109,7 +108,7 @@ from .filtres import corriger_filtres
 from .granularite import corriger_granularite
 from .narration import raconter
 from .periodes import corriger_periode
-
+from .ages import _norm as _norm_age, age_cite, age_servi, tranches_citees
 from .plan import PlanInvalide, corriger_indicateur, repli, valider
 from .prompts import (
     SYSTEME_EXTRACTION,
@@ -117,7 +116,10 @@ from .prompts import (
     prompt_extraction,
 )
 from .recherche import fiches, rechercher, zones_connues
-from .zones import corriger_zones
+
+from .cadrage import corriger_cadrage, corriger_comparaison, deux_sexes
+from .zones import corriger_zones, niveau_de_zone
+
 
 logger = logging.getLogger(__name__)
 
@@ -321,12 +323,14 @@ def repondre(question):
     #    dépend de `dimension`, que corriger_filtres peut avoir vidée, et
     #    la granularité dépend de `niveau`, que le cadrage peut avoir
     #    écrit en requalifiant une répartition en classement.
-
     plan = corriger_zones(plan, question)
+    plan["niveau_zone"] = (niveau_de_zone(question, plan["zones"][0])
+                           if plan.get("zones") else None)
     plan = corriger_indicateur(plan, question)
     plan = corriger_filtres(plan, question)
     plan = corriger_periode(plan, question)
     plan = corriger_cadrage(plan, question)
+    plan = corriger_comparaison(plan, question)
     plan = corriger_granularite(plan)
 
     # Un plan sans indicateur est le seul cas où l'on s'arrête avant le
@@ -344,11 +348,123 @@ def repondre(question):
         # Conservée pour information, sans effet sur le déroulement.
         meta_plan = {**meta_plan, "doute_modele": plan["clarification"]}
 
+
+    # (B) Sans année ni âge, le recensement fait foi. Constaté : la même
+    # question rendait 2023 ou 2025 selon l'indicateur choisi par le modèle.
+    if (plan.get("indicateur") == "pop_region"
+            and plan.get("methode") in ("valeur_simple", "classement",
+                                        "comparaison", "geographique")
+            and not any((plan.get("periode") or {}).values())
+            and "age" not in (plan.get("filtres") or {})
+            and plan.get("dimension") != "age"
+            and not age_cite(question)):
+        plan["indicateur"] = "pop_totale"
+        if (plan.get("filtres") or {}).get("sexe") == "M":
+            plan["filtres"]["sexe"] = "H"
+
+    # (C) Groupe d'âge. Somme exacte des tranches publiées quand les bornes
+    # le permettent ; refus explicite sinon.
+    groupe = age_cite(question)
+    tranches, precision = tranches_citees(question) if groupe else (None, None)
+    repartition_age = (plan.get("methode") == "repartition"
+                       and plan.get("dimension") == "age")
+
+    # Le modèle choisit parfois un autre indicateur ventilé par âge (le
+    # chômage) pour une question qui ne parle que de population. Constaté :
+    # « plus d'hommes que de femmes chez les 20 ans et plus » -> chômage,
+    # tranche inventée Y20T100.
+    MOTS_AUTRES = ("chomage", "emploi", "activite", "natalite", "naissance",
+                   "mortalite", "deces", "electricite", "eclairage", "eau",
+                   "bien etre", "menage", "menages", "concession")
+    texte_q = f" {_norm_age(question)} "
+    if (tranches and plan.get("indicateur") not in (
+            "pop_totale", "pop_region", "rapport_masculinite",
+            "part_population")
+            and not any(f" {m} " in texte_q for m in MOTS_AUTRES)):
+        plan["indicateur"] = ("rapport_masculinite" if deux_sexes(question)
+                              else "pop_region")
+        plan["filtres"] = {k: v for k, v in (plan.get("filtres") or {}).items()
+                           if k == "sexe"}
+
+    # Part d'un groupe d'âge : pas encore calculée. On le dit.
+    if tranches and plan.get("indicateur") == "part_population":
+        return _refus(
+            f"La part de « {groupe} » dans la population n'est pas encore "
+            f"calculée ; l'effectif l'est.", "age_non_traite",
+            alternatives=[f"Combien de personnes de {groupe} vivent au "
+                          f"Sénégal ?"],
+            plan=plan, meta=meta_plan,
+        )
+
+    if (tranches and not repartition_age
+            and plan.get("indicateur") in ("pop_totale", "pop_region",
+                                           "rapport_masculinite")):
+        nommees = [z for z in plan.get("zones") or [] if z != "SENEGAL"]
+        if nommees or plan.get("methode") not in ("valeur_simple",
+                                                  "comparaison", "evolution"):
+            return _refus(
+                f"Les effectifs par âge (« {groupe} ») ne sont publiés qu'au "
+                f"niveau national, dans les projections de population "
+                f"2016-2025.", "age_non_traite",
+                alternatives=[f"Combien de personnes de {groupe} vivent au "
+                              f"Sénégal ?"],
+                plan=plan, meta=meta_plan,
+            )
+        if plan["indicateur"] == "rapport_masculinite":
+            plan["methode"], plan["dimension"] = "comparaison", "sexe"
+        plan["indicateur"] = "pop_region"
+        filtres = {k: v for k, v in (plan.get("filtres") or {}).items()
+                   if k != "age"}
+        if filtres.get("sexe") == "H":
+            filtres["sexe"] = "M"
+        plan["filtres"] = {**filtres, "age": tranches}
+        if (plan["methode"] != "evolution"
+                and not any((plan.get("periode") or {}).values())):
+            plan["periode"] = {"debut": "2023", "fin": "2023"}
+
+    elif groupe and not age_servi(plan):
+        return _refus(
+            f"« {groupe} » ne correspond pas exactement aux tranches de 5 ans "
+            f"publiées par l'ANSD. Précisez une tranche, par exemple « moins "
+            f"de 15 ans », « de 15 à 34 ans » ou « 60 ans et plus ».",
+            "age_non_traite",
+            alternatives=["Combien de personnes âgées de 15 à 34 ans vivent "
+                          "au Sénégal ?",
+                          "Quelle est la répartition de la population par "
+                          "tranche d'âge ?"],
+            plan=plan, meta=meta_plan,
+        )
+
     # 4. Calcul. La validation portant sur les données a lieu ici.
     try:
         resultat = executer(plan)
     except ErreurAnalyse as e:
         return _refus(e.message, e.motif, e.alternatives, plan, meta_plan)
+
+    # Tranche ou somme de tranches retenue : toujours dite.
+    age = (plan.get("filtres") or {}).get("age")
+    if groupe and age:
+        from analytics.repartition import _libelle_age
+        if isinstance(age, list):
+            note = (f"« {groupe} » : somme des {len(age)} tranches de 5 ans "
+                    f"publiées ({_libelle_age(age[0])} … "
+                    f"{_libelle_age(age[-1])}), projections nationales.")
+            if precision:
+                note += " " + precision
+        else:
+            note = (f"La question cite « {groupe} » ; tranche d'âge "
+                    f"retenue : {_libelle_age(age)}.")
+        resultat.notes.insert(0, note)
+
+    # Rapport de féminité : la plateforme publie l'inverse.
+    if (plan.get("indicateur") == "rapport_masculinite"
+            and "feminite" in _norm_age(question)
+            and len(resultat.lignes) == 1 and resultat.lignes[0]["valeur"]):
+        inverse = 10000 / float(resultat.lignes[0]["valeur"])
+        resultat.notes.insert(0, (
+            f"Le rapport de féminité est l'inverse du rapport de "
+            f"masculinité publié : {inverse:.2f} femmes pour 100 hommes."
+        ).replace(".", ",", 1))
 
     # 5-6. Narration, puis vérification des nombres cités.
     texte, meta_texte = raconter(question, resultat)

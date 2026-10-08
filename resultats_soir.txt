@@ -1,0 +1,107 @@
+
+ 1. Quelle part de la population nationale vit dans la région de Dakar ?   (259s, origine modele)
+    plan    : classement · pop_totale · niveau=region · niveau_zone=region · zones=DAKAR · top10 desc
+    obtenu  : 10 ligne(s), unité « personnes »
+              DAKAR = 4004425.0
+              THIES = 2463679.0
+              DIOURBEL = 2080332.0
+              KAOLACK = 1336718.0
+              … et 6 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 2. Combien de personnes âgées de moins de 15 ans vivent au Sénégal ?   (76s, origine modele)
+    plan    : valeur_simple · pop_region · niveau=region · zones=SENEGAL · periode=2023→2023 · filtres={'age': ['Y0T4', 'Y5T9', 'Y10T14']}
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2023 = 7091127.0
+    note    : « moins de 15 ans » : somme des 3 tranches de 5 ans publiées (0 à 4 ans … 10 à 14 ans), projections nationales.
+
+ 3. Quelle est la population âgée de 60 ans ou plus ?   (39s, origine modele)
+    plan    : valeur_simple · pop_region · niveau=region · zones=SENEGAL · periode=2023→2023 · filtres={'age': ['Y60T64', 'Y65T69', 'Y70T74', 'Y75T79', 'Y_GE80']} · dim=age
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2023 = 1080522.0
+    note    : « 60 ans ou plus » : somme des 5 tranches de 5 ans publiées (60 à 64 ans … 80 ans et plus), projections nationales.
+
+ 4. Combien de personnes âgées de 15 à 34 ans vivent au Sénégal ?   (36s, origine modele)
+    plan    : valeur_simple · pop_region · niveau=national · zones=SENEGAL · periode=2023→2023 · filtres={'age': ['Y15T19', 'Y20T24', 'Y25T29', 'Y30T34']} · dim=age
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2023 = 6487278.0
+    note    : « de 15 a 34 ans » : somme des 4 tranches de 5 ans publiées (15 à 19 ans … 30 à 34 ans), projections nationales.
+
+ 5. Combien de femmes de 60 ans ou plus vivent au Sénégal ?   (38s, origine modele)
+    plan    : valeur_simple · pop_region · niveau=region · zones=SENEGAL · periode=2023→2023 · filtres={'sexe': 'F', 'age': ['Y60T64', 'Y65T69', 'Y70T74', 'Y75T79', 'Y_GE80']} · dim=age
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2023 = 558501.0
+    note    : « 60 ans ou plus » : somme des 5 tranches de 5 ans publiées (60 à 64 ans … 80 ans et plus), projections nationales.
+
+ 6. Y a-t-il plus d'hommes que de femmes chez les 20 ans et plus au Sénégal ?   (34s, origine modele)
+    plan    : comparaison · taux_chomage_a · zones=SENEGAL · filtres={'age': 'Y20T100'} · dim=sexe
+    obtenu  : REFUS donnee_absente
+    message : Pas assez de données pour comparer « Taux de chômage (annuel, par région) » en 2025 : SENEGAL · Femmes, SENEGAL · Hommes sans valeur.
+
+ 7. Y a-t-il plus d'hommes adultes que de femmes au Sénégal ?   (36s, origine modele)
+    plan    : valeur_simple · rapport_masculinite · niveau=national · zones=SENEGAL
+    obtenu  : REFUS age_non_traite
+    message : « adultes » ne correspond pas exactement aux tranches de 5 ans publiées par l'ANSD. Précisez une tranche, par exemple « moins de 15 ans », « de 15 à 34 ans » ou « 60 ans et plus ».
+
+ 8. Combien de personnes de moins de 15 ans vivent à Dakar ?   (36s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=departement · zones=DAKAR
+    obtenu  : REFUS age_non_traite
+    message : Les effectifs par âge (« moins de 15 ans ») ne sont publiés qu'au niveau national, dans les projections de population 2016-2025.
+
+ 9. Compare la population des départements de Dakar, Pikine, Guédiawaye et Rufisque.   (49s, origine modele)
+    plan    : comparaison · pop_totale · niveau=departement · niveau_zone=departement · zones=DAKAR,PIKINE,GUEDIAWAYE,RUFISQUE
+    obtenu  : 4 ligne(s), unité « personnes »
+              DAKAR 2023 = 1278469.0
+              RUFISQUE 2023 = 818337.0
+              PIKINE 2023 = 764597.0
+              GUEDIAWAYE 2023 = 372708.0
+    note    : Écart entre DAKAR et GUEDIAWAYE : 905 761 personnes, soit 3,43 fois plus.
+
+10. Compare la population masculine et féminine de Dakar et Thiès.   (39s, origine modele)
+    plan    : comparaison · pop_totale · zones=DAKAR,THIES · dim=sexe
+    obtenu  : 4 ligne(s), unité « personnes »
+              DAKAR · Femmes 2023 = 1985666.0
+              DAKAR · Hommes 2023 = 2018759.0
+              THIES · Femmes 2023 = 1206703.0
+              THIES · Hommes 2023 = 1256976.0
+    note    : DAKAR : 33 093 hommes de plus que de femmes (101,67 hommes pour 100 femmes).
+    note    : THIES : 50 273 hommes de plus que de femmes (104,17 hommes pour 100 femmes).
+
+11. Quelle région compte le moins d'habitants ?   (26s, origine modele)
+    plan    : classement · pop_totale · niveau=region · zones=SENEGAL · top5 asc
+    obtenu  : 5 ligne(s), unité « personnes »
+              KEDOUGOU = 245147.0
+              SEDHIOU = 589264.0
+              ZIGUINCHOR = 617568.0
+              KAFFRINE = 820404.0
+              … et 1 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+12. Quel est le rapport de féminité à Dakar ?   (29s, origine modele)
+    plan    : valeur_simple · rapport_masculinite · niveau=commune · zones=DAKAR
+    obtenu  : 1 ligne(s), unité « hommes pour 100 femmes »
+              DAKAR 2023 = 101.67
+    note    : Le rapport de féminité est l'inverse du rapport de masculinité publié : 98,36 femmes pour 100 hommes.
+
+13. Quelle est la répartition de la population par tranche d'âge ?   (43s, origine modele)
+    plan    : repartition · pop_region · niveau=national · zones=SENEGAL · dim=age
+    obtenu  : 17 ligne(s), unité « personnes »
+              0 à 4 ans = 2490846.0
+              5 à 9 ans = 2326127.0
+              10 à 14 ans = 2407144.0
+              15 à 19 ans = 2277949.0
+              … et 13 autre(s)
+    note    : Répartition par tranche d'âge  sur un total de 19 075 959 personnes.
+
+14. Évolution de la population de Dakar   (45s, origine modele)
+    plan    : evolution · pop_region · niveau=region · zones=DAKAR · dim=age
+    obtenu  : 10 ligne(s), unité « personnes »
+              2016 = 3372557.0
+              2017 = 3454871.0
+              2018 = 3539195.0
+              2019 = 3625576.0
+              … et 6 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (departement).
+
+14 questions en 785s
+

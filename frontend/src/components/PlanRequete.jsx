@@ -11,11 +11,14 @@ import { useState } from "react";
  * JSON exact — ce qu'un évaluateur voudra vérifier.
  */
 
+
 const LIBELLES = {
   valeur_simple: "valeur",
   classement: "classement",
   evolution: "évolution",
   geographique: "carte",
+  repartition: "répartition",
+  comparaison: "comparaison",
 };
 
 const NIVEAUX = {
@@ -38,7 +41,9 @@ export default function PlanRequete({ plan, meta }) {
     plan.indicateur,
     plan.niveau && NIVEAUX[plan.niveau],
     plan.zones?.length ? plan.zones.join(", ") : null,
-    plan.top_n ? `${plan.top_n} premiers` : null,
+    plan.methode === "classement" && plan.top_n
+      ? `${plan.top_n} premiers`
+      : null,
   ]
     .filter(Boolean)
     .join(" · ");

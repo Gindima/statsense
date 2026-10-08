@@ -85,13 +85,7 @@ PAR_METHODE = {
 
 # Avertissement attaché à une dimension, dès qu'elle est employée — en
 # ventilation ou en filtre.
-PAR_DIMENSION = {
-    "age": (
-        "Les tranches d'âge publiées ne couvrent pas les 60-64 ans : une "
-        "ventilation par âge ne totalise donc pas 100 %."
-    ),
-}
-
+PAR_DIMENSION = {}
 
 def avertissements_pour(code, methode=None, dimension=None, filtres=None):
     """
@@ -108,7 +102,10 @@ def avertissements_pour(code, methode=None, dimension=None, filtres=None):
         if texte and texte not in notes:
             notes.append(texte)
 
-    ajouter(PAR_INDICATEUR.get(code))
+    if code == "part_population" and (filtres or {}).get("sexe"):
+        ajouter("Part du sexe demandé dans la population totale de la zone.")
+    else:
+        ajouter(PAR_INDICATEUR.get(code))
     ajouter(PAR_METHODE.get((code, methode)))
 
     employees = set(filtres or {})

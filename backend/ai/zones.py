@@ -91,7 +91,7 @@ def _position_gentile(texte, cle):
     return -1
 
 
-def zones_citees(question, maximum=3):
+def zones_citees(question, maximum=6):
     """
     Zones effectivement nommées dans la question, dans l'ordre où elles
     apparaissent.
@@ -238,3 +238,24 @@ def corriger_zones(plan, question):
     else:
         plan["zones"] = []
     return plan
+
+
+RE_NIVEAU_DE = re.compile(
+    r"\b(REGION|DEPARTEMENT|COMMUNE|QUARTIER|VILLAGE)S?\s+"
+    r"(?:DE LA |DE L |DU |DE |D )")
+
+
+def niveau_de_zone(question, nom):
+    """
+    Niveau que la QUESTION attache à une zone : « le département de
+    Dakar » -> departement. None si elle n'en dit rien.
+
+    Jamais celui du modèle, qui écrit « par commune » pour Dakar : il
+    ferait prendre la commune de Kaolack pour la région de Kaolack.
+    """
+    texte, cible = norm(question), norm(nom)
+    for m in RE_NIVEAU_DE.finditer(texte):
+        if texte[m.end():].startswith(cible):
+            n = m.group(1).lower()
+            return "quartier" if n == "village" else n
+    return None

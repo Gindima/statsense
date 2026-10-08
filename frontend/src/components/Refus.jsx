@@ -20,6 +20,7 @@ const MOTIFS = {
   non_agregeable: "Agrégation impossible",
   zone_inconnue: "Lieu non reconnu",
   zone_ambigue: "Plusieurs lieux portent ce nom",
+  age_non_traite: "Groupe d'âge non traité",
 };
 
 export default function Refus({ reponse, onSuggestion }) {

@@ -1,0 +1,120 @@
+
+ 1. Quelle est la population âgée de 60 ans ou plus ?   (64s, origine modele)
+    plan    : valeur_simple · pop_region · niveau=region · zones=SENEGAL · dim=age
+    obtenu  : REFUS age_non_traite
+    message : La question porte sur un groupe d'âge (« 60 ans ou plus »), que la plateforme ne sait pas encore isoler. Les effectifs par tranche de 5 ans existent au niveau national, dans les projections de populat
+
+ 2. Combien de personnes âgées de moins de 15 ans vivent au Sénégal ?   (72s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=region · zones=SENEGAL
+    obtenu  : REFUS age_non_traite
+    message : La question porte sur un groupe d'âge (« moins de 15 ans »), que la plateforme ne sait pas encore isoler. Les effectifs par tranche de 5 ans existent au niveau national, dans les projections de popula
+
+ 3. Compare la population de Dakar et de Thiès.   (103s, origine modele)
+    plan    : comparaison · pop_totale · zones=DAKAR,THIES
+    obtenu  : 2 ligne(s), unité « personnes »
+              DAKAR 2023 = 4004425.0
+              THIES 2023 = 2463679.0
+    note    : Écart entre DAKAR et THIES : 1 540 746 personnes, soit 1,63 fois plus.
+
+ 4. Quelle était la population du département de Dakar en 2023 ?   (56s, origine modele)
+    plan    : valeur_simple · pop_region · niveau=departement · niveau_zone=departement · zones=DAKAR · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « personnes »
+              DAKAR 2023 = 1278469.0
+
+ 5. Quelle région compte le moins d'habitants ?   (54s, origine modele)
+    plan    : classement · pop_totale · niveau=region · zones=SENEGAL · top5 asc
+    obtenu  : 5 ligne(s), unité « personnes »
+              KEDOUGOU = 245147.0
+              SEDHIOU = 589264.0
+              ZIGUINCHOR = 617568.0
+              KAFFRINE = 820404.0
+              … et 1 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 6. Quelle région compte le plus de femmes ?   (66s, origine modele)
+    plan    : classement · pop_totale · niveau=region · filtres={'sexe': 'F'} · top5 desc
+    obtenu  : 5 ligne(s), unité « personnes »
+              DAKAR = 1985666.0
+              THIES = 1206703.0
+              DIOURBEL = 1050582.0
+              KAOLACK = 661808.0
+              … et 1 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 7. Quelle région compte le plus d'hommes ?   (66s, origine modele)
+    plan    : classement · pop_totale · niveau=region · filtres={'sexe': 'H'} · top5 desc
+    obtenu  : 5 ligne(s), unité « personnes »
+              DAKAR = 2018759.0
+              THIES = 1256976.0
+              DIOURBEL = 1029750.0
+              KAOLACK = 674910.0
+              … et 1 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 8. Compare la population des départements de Dakar, Pikine, Guédiawaye et Rufisque.   (85s, origine modele)
+    plan    : comparaison · pop_region · niveau=departement · niveau_zone=departement · zones=DAKAR,PIKINE,GUEDIAWAYE,RUFISQUE
+    obtenu  : 4 ligne(s), unité « personnes »
+              DAKAR 2025 = 1327422.0
+              RUFISQUE 2025 = 849671.0
+              PIKINE 2025 = 793874.0
+              GUEDIAWAYE 2025 = 386979.0
+    note    : Écart entre DAKAR et GUEDIAWAYE : 940 443 personnes, soit 3,43 fois plus.
+
+ 9. Combien d'habitants vivent dans les départements de la région de Dakar ?   (54s, origine modele)
+    plan    : classement · pop_totale · niveau=departement · niveau_zone=region · zones=DAKAR · top10 desc
+    obtenu  : 5 ligne(s), unité « personnes »
+              DAKAR = 1278469.0
+              RUFISQUE = 818337.0
+              KEUR MASSAR = 770314.0
+              PIKINE = 764597.0
+              … et 1 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+10. Quelle part de la population nationale vit dans la région de Dakar ?   (70s, origine modele)
+    plan    : classement · part_population · niveau=region · niveau_zone=region · zones=DAKAR · top10 desc
+    obtenu  : 10 ligne(s), unité « % »
+              DAKAR = 22.09
+              THIES = 13.59
+              DIOURBEL = 11.48
+              KAOLACK = 7.37
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+    note    : Part calculée par rapport à la zone immédiatement supérieure, et non par rapport au Sénégal : la part d'une commune est sa part dans son département, celle d'un
+
+11. Quelle est la proportion de femmes à Dakar ?   (46s, origine modele)
+    plan    : valeur_simple · part_population · niveau=commune · zones=DAKAR · filtres={'sexe': 'F'}
+    obtenu  : 1 ligne(s), unité « % »
+              DAKAR 2023 = 49.59
+    note    : Part du sexe demandé dans la population totale de la zone.
+
+12. Compare le nombre d'hommes et de femmes au Sénégal.   (52s, origine modele)
+    plan    : valeur_simple · rapport_masculinite · niveau=national · zones=SENEGAL
+    obtenu  : 1 ligne(s), unité « hommes pour 100 femmes »
+              SENEGAL 2023 = 102.59
+
+13. Compare la population masculine et féminine de Dakar et Thiès.   (33s, origine modele)
+    plan    : comparaison · pop_region · zones=DAKAR,THIES · dim=sexe
+    obtenu  : 4 ligne(s), unité « personnes »
+              DAKAR · Hommes 2025 = 2098136.0
+              DAKAR · Femmes 2025 = 2059615.0
+              THIES · Hommes 2025 = 1321204.0
+              THIES · Femmes 2025 = 1265888.0
+    note    : Écart entre DAKAR · Hommes et THIES · Femmes : 832 248 personnes, soit 1,66 fois plus.
+
+14. Y a-t-il plus d'hommes que de femmes à Dakar ?   (25s, origine modele)
+    plan    : valeur_simple · rapport_masculinite · niveau=commune · zones=DAKAR
+    obtenu  : 1 ligne(s), unité « hommes pour 100 femmes »
+              DAKAR 2023 = 101.67
+
+15. Quelle est la répartition de la population par tranche d'âge ?   (30s, origine modele)
+    plan    : repartition · pop_region · niveau=national · zones=SENEGAL · dim=age
+    obtenu  : 17 ligne(s), unité « personnes »
+              0 à 4 ans = 2490846.0
+              5 à 9 ans = 2326127.0
+              10 à 14 ans = 2407144.0
+              15 à 19 ans = 2277949.0
+              … et 13 autre(s)
+    note    : Répartition par tranche d'âge  sur un total de 19 075 959 personnes.
+
+15 questions en 874s
+

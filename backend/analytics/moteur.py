@@ -98,6 +98,19 @@ from .donnees import (
     zone_par_nom,
 )
 
+from .donnees import (
+    ORDRE,
+    _valeur_directe,
+    get_indicateur,
+    modalites,
+    periodes_disponibles,
+    situer,
+    valeur,
+    valeurs_par_zone,
+    verifier_dimensions,
+    verifier_granularite,
+    zone_par_nom,
+)
 from .avertissements import avertissements_pour
 from .equivalences import serie_equivalente
 from .resultats import AnalysisResult, ErreurAnalyse, source_de
@@ -302,7 +315,10 @@ def valeur_simple(plan):
             alternatives=["préciser une région, un département ou le Sénégal"],
         )
 
-    zone = zone_par_nom(noms[0])
+    niveau_zone = plan.get("niveau_zone")
+    if niveau_zone:
+        verifier_granularite(ind, niveau_zone)
+    zone = zone_par_nom(noms[0], niveau=niveau_zone)
     v = valeur(ind, zone, periode, filtres)
 
     if v is None:
@@ -316,9 +332,15 @@ def valeur_simple(plan):
     if zone.niveau == Niveau.QUARTIER:
         notes.append(f"Localité recensée comme quartier, village ou "
                      f"hameau : {situer(zone)}.")
-    n = _note_agregation(ind, zone.niveau)
-    if n:
-        notes.append(n)
+
+    # La note ne vaut que si la valeur a réellement été sommée : le total
+    # national des projections est publié tel quel.
+    if not isinstance(filtres.get("age"), list) \
+            and _valeur_directe(ind, zone, periode, filtres) is None:
+        n = _note_agregation(ind, zone.niveau)
+        if n:
+            notes.append(n)
+
     if ind.prix_base:
         notes.append(f"Valeurs en prix {ind.prix_base}.")
 
@@ -390,7 +412,9 @@ def classement(plan):
         meta={"indicateur": ind.libelle, "periode": periode,
               "niveau": niveau, "ordre": "desc" if desc else "asc",
               "perimetre": parent.nom if parent else "Sénégal",
-              "filtres": filtres},
+              "filtres": filtres,
+              "unique": bool(plan.get("reponse_unique")),
+            },
     )
 
 
@@ -471,6 +495,10 @@ def evolution(plan):
         )
 
     notes = []
+
+    if len(noms) > 1:
+        notes.append(f"Plusieurs zones citées : la courbe porte sur "
+                     f"{zone.nom} seulement.")
 
     # La période demandée peut précéder le début de la série, ou dépasser sa
     # fin. Le dire, plutôt que de laisser croire que la courbe couvre ce qui
@@ -608,6 +636,102 @@ def geographique(plan):
               "couvertes": len(lignes), "filtres": filtres},
     )
 
+# --- 5. comparaison --------------------------------------------------------
+
+LIBELLES_SEXE = {"H": "Hommes", "M": "Hommes", "F": "Femmes"}
+
+
+def _fr(x, decimales=0):
+    return (f"{Decimal(x):,.{decimales}f}"
+            .replace(",", " ").replace(".", ","))
+
+
+def comparaison(plan):
+    """
+    Plusieurs zones, ou les deux sexes, côte à côte, à la même période.
+    Chaque valeur est calculée comme une valeur simple ; l'écart et le
+    rapport le sont ici, en Decimal.
+    """
+    ind, filtres = _prepare(plan)
+    periode = _periode(ind, plan)
+
+    niveau = plan.get("niveau_zone")
+    if niveau:
+        verifier_granularite(ind, niveau)
+    zones = [zone_par_nom(n, niveau=niveau)
+             for n in (plan.get("zones") or ["SENEGAL"])]
+
+    sexes = [None]
+    if plan.get("dimension") == "sexe":
+        filtres = {k: v for k, v in filtres.items() if k != "sexe"}
+        sexes = modalites(ind, "sexe") or [None]
+
+    lignes, manquantes = [], []
+    for z in zones:
+        for s in sexes:
+            f = {**filtres, "sexe": s} if s else filtres
+            nom = f"{z.nom} · {LIBELLES_SEXE.get(s, s)}" if s else z.nom
+            v = valeur(ind, z, periode, f)
+            if v is None:
+                manquantes.append(nom)
+                continue
+            lignes.append({"zone": nom, "code": z.code,
+                           "geojson_id": z.geojson_id,
+                           "periode": periode, "valeur": v})
+
+    if len(lignes) < 2:
+        raise ErreurAnalyse(
+            f"Pas assez de données pour comparer « {ind.libelle} » en "
+            f"{periode} : {', '.join(manquantes) or 'aucune zone'} sans "
+            f"valeur.", motif="donnee_absente")
+
+    if plan.get("dimension") == "sexe":
+        # Lignes gardées dans l'ordre des zones (Dakar H, Dakar F, Thiès…) :
+        # l'écart utile est DANS chaque zone, pas entre Dakar · Hommes et
+        # Thiès · Femmes.
+        notes = []
+        for z in zones:
+            parts = {l["zone"].split(" · ")[-1]: Decimal(l["valeur"])
+                     for l in lignes if l["code"] == z.code}
+            h, f = parts.get("Hommes"), parts.get("Femmes")
+            if h is not None and f:
+                d = h - f
+                plus = (f"{_fr(d)} hommes de plus que de femmes" if d >= 0
+                        else f"{_fr(-d)} femmes de plus que d'hommes")
+                notes.append(f"{z.nom} : {plus} "
+                             f"({_fr(h / f * 100, 2)} hommes pour 100 femmes).")
+        ecart = None
+    else:
+        lignes.sort(key=lambda l: l["valeur"], reverse=True)
+        haut, bas = lignes[0], lignes[-1]
+        v_haut, v_bas = Decimal(haut["valeur"]), Decimal(bas["valeur"])
+        ecart = v_haut - v_bas
+        if _est_un_taux(ind.unite):
+            note = (f"Écart entre {haut['zone']} et {bas['zone']} : "
+                    f"{_fr(ecart, 1)} points.")
+        else:
+            note = (f"Écart entre {haut['zone']} et {bas['zone']} : "
+                    f"{_fr(ecart, 0 if ind.agregeable else 2)} {ind.unite}")
+            note += (f", soit {_fr(v_haut / v_bas, 2)} fois plus."
+                     if ind.agregeable and v_bas > 0 else ".")
+        notes = [note]
+    if manquantes:
+        notes.append(f"Sans donnée, donc absentes de la comparaison : "
+                     f"{', '.join(manquantes)}.")
+    if ind.prix_base:
+        notes.append(f"Valeurs en prix {ind.prix_base}.")
+
+    return AnalysisResult(
+        lignes=lignes,
+        unite=ind.unite,
+        sources=[source_de(ind)],
+        chart_hint="bar",
+        notes=notes,
+        meta={"indicateur": ind.libelle, "periode": periode,
+              "zones": [z.nom for z in zones], "ecart": ecart,
+              "filtres": filtres, "dimension": plan.get("dimension")},
+    )
+
 
 # --- dispatcher ------------------------------------------------------------
 
@@ -617,7 +741,7 @@ METHODES = {
     "evolution": evolution,
     "geographique": geographique,
     "repartition": repartition,
-    # "comparaison": comparaison,     ← phase 2
+    "comparaison": comparaison,
 }
 
 
