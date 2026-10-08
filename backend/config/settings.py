@@ -147,9 +147,14 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "UNAUTHENTICATED_USER": None,
+    # L'API est publique et sans compte. Sans cette ligne, une session
+    # /admin/ ouverte déclenche le contrôle CSRF sur POST /api/ask/, que
+    # le frontend ne passe pas : toutes les questions échouent en 403.
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
 # En production le frontend est servi par Django : même origine, donc aucun

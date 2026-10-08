@@ -59,6 +59,12 @@ def ecrire(question, reponse, epingle=False):
     if reponse.get("statut") != "ok":
         return None
 
+    # Une réponse construite sans le modèle (repli) serait resservie
+    # telle quelle même après le retour du modèle. Le préchauffage
+    # l'écartait déjà ; l'API ne le faisait pas.
+    if (reponse.get("meta") or {}).get("origine") in ("repli", "echec"):
+        return None
+
     meta = reponse.get("meta") or {}
     plan = reponse.get("plan") or {}
 

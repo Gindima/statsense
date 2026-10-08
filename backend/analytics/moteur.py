@@ -90,12 +90,14 @@ from .donnees import (
     ORDRE,
     get_indicateur,
     periodes_disponibles,
+    situer,
     valeur,
     valeurs_par_zone,
     verifier_dimensions,
     verifier_granularite,
     zone_par_nom,
 )
+
 from .avertissements import avertissements_pour
 from .equivalences import serie_equivalente
 from .resultats import AnalysisResult, ErreurAnalyse, source_de
@@ -142,7 +144,14 @@ def _periode(ind, plan):
         )
 
     p = (plan.get("periode") or {})
+
     fin = p.get("fin")
+    # Une valeur à une date ne demande qu'une année. Si la seule année
+    # citée est arrivée dans `debut` (« dès 2015 »), c'est elle qui est
+    # demandée, pas la dernière disponible.
+    if fin in (None, "", "actuel", "dernier") \
+            and _est_une_periode(p.get("debut")):
+        fin = p.get("debut")
     if fin in (None, "", "actuel", "dernier"):
         return dispo[-1]
 
@@ -304,6 +313,9 @@ def valeur_simple(plan):
         )
 
     notes = []
+    if zone.niveau == Niveau.QUARTIER:
+        notes.append(f"Localité recensée comme quartier, village ou "
+                     f"hameau : {situer(zone)}.")
     n = _note_agregation(ind, zone.niveau)
     if n:
         notes.append(n)
@@ -384,20 +396,55 @@ def classement(plan):
 
 # --- 3. évolution ----------------------------------------------------------
 
-def _variation(serie, pas):
-    """
-    Variation entre le dernier point et celui situé `pas` rangs avant.
+def _est_un_taux(unite):
+    """%, ‰, « pour 1000 » : un écart se lit en points, pas en %."""
+    u = (unite or "").strip().lower()
+    return "%" in u or "‰" in u or u.startswith("pour 1")
 
-    `pas` vaut 4 pour une série trimestrielle (glissement annuel) et 1
-    pour une série annuelle.
+
+def _ecart_annees(p1, p2):
+    """Durée réelle en années entre deux périodes, ou None."""
+    n1, r1 = _rang(p1)
+    n2, r2 = _rang(p2)
+    if n1 is None or n1 != n2:
+        return None
+    return (r2 - r1) / (4 if n1 == "trimestre" else 1)
+
+
+def _variations(serie, unite, glissement):
     """
-    if len(serie) <= pas:
-        return None, None
-    avant, apres = serie[-1 - pas]["valeur"], serie[-1]["valeur"]
-    if not avant:
-        return None, None
-    ecart = Decimal(apres) - Decimal(avant)
-    return ecart, ecart / Decimal(avant) * 100
+    Variations calculées sur la durée RÉELLE de la courbe.
+
+    L'ancienne version comparait le dernier point à l'avant-dernier sous
+    le libellé « sur la période », et divisait la croissance annuelle par
+    le nombre de points au lieu du nombre d'années.
+    """
+    premier, dernier = serie[0], serie[-1]
+    v0, v1 = Decimal(premier["valeur"]), Decimal(dernier["valeur"])
+    taux = _est_un_taux(unite)
+    annees = _ecart_annees(premier["periode"], dernier["periode"])
+
+    out = {"est_taux": taux, "annees": annees,
+           "variation_absolue": v1 - v0, "variation_pct": None,
+           "tcam_pct": None, "glissement_pct": None}
+
+    if not taux and v0:
+        out["variation_pct"] = (v1 - v0) / v0 * 100
+    if not taux and v0 > 0 and v1 > 0 and annees and annees >= 1:
+        exposant = Decimal(1) / Decimal(str(annees))
+        out["tcam_pct"] = ((v1 / v0) ** exposant - 1) * 100
+
+    # Glissement annuel : même trimestre un an plus tôt, cherché par sa
+    # date et non par sa position dans la liste.
+    if glissement:
+        nature, rang = _rang(dernier["periode"])
+        if nature == "trimestre":
+            cible = _periode_du_rang(nature, rang - 4)
+            avant = next((l for l in serie if l["periode"] == cible), None)
+            if avant and avant["valeur"]:
+                va = Decimal(avant["valeur"])
+                out["glissement_pct"] = (v1 - va) / va * 100
+    return out
 
 
 def evolution(plan):
@@ -478,21 +525,14 @@ def evolution(plan):
     # du secteur primaire chute chaque premier trimestre à cause du cycle
     # des récoltes, sans qu'aucun effondrement ne se produise. On compare
     # donc toujours au même trimestre de l'année précédente.
-    pas = 4 if ind.comparaison_defaut == "t-4" else 1
-    if pas == 4:
+
+    glissement = ind.comparaison_defaut == "t-4"
+    if glissement:
         notes.append("Comparaison effectuée en glissement annuel "
                      "(trimestre T comparé au trimestre T-4), en raison "
                      "de la saisonnalité de cette série.")
 
-    ecart, pct = _variation(serie, pas)
-
-    # Taux de croissance annuel moyen, sur la durée réellement couverte.
-    debut, fin = Decimal(serie[0]["valeur"]), Decimal(serie[-1]["valeur"])
-    annees = max(len(serie) - 1, 1) / (4 if pas == 4 else 1)
-    tcam = None
-    if debut > 0 and fin > 0 and annees >= 1:
-        tcam = ((fin / debut) ** Decimal(1 / annees) - 1) * 100
-
+    variations = _variations(serie, ind.unite, glissement)
     note = _note_agregation(ind, zone.niveau)
     if note:
         notes.append(note)
@@ -511,10 +551,8 @@ def evolution(plan):
             "points": len(serie),
             "periodes_absentes": absentes,
             "trous": trous,
-            "variation_absolue": ecart,
-            "variation_pct": pct,
-            "tcam_pct": tcam,
-            "base_comparaison": "t-4" if pas == 4 else "n-1",
+            "base_comparaison": "t-4" if glissement else "periode",
+            **variations,
             "filtres": filtres,
         },
     )

@@ -308,3 +308,39 @@ def repli(question, indicateurs):
         "confiance": 0.45,
         "clarification": None,
     })
+
+
+# Codes inventés par le modèle pour « combien de femmes » : ce sont des
+# ventilations de la population, pas des indicateurs.
+RE_POP_SEXE = re.compile(
+    r"^(?:pop|population|nombre|nb|effectif)s?(?:_totale)?_(?:des_)?"
+    r"(?:femmes?|hommes?|feminine|masculine)s?$")
+
+# Mots qui demandent réellement un rapport entre les sexes.
+MOTS_RAPPORT = ("rapport", "ratio", "proportion", "equilibre", "plus d",
+                "autant", "masculinite")
+
+
+def corriger_indicateur(plan, question):
+    """
+    Deux erreurs mesurées du modèle sur les questions de sexe :
+
+        « Combien de femmes vivent à Dakar ? »  -> pop_femmes (inventé)
+        « Combien d'hommes vivent à Dakar ? »   -> rapport_masculinite
+
+    La première produisait un refus injustifié, la seconde un ratio à qui
+    demandait un effectif. Une question qui nomme UN seul sexe sans parler
+    de rapport demande la population de ce sexe.
+    """
+    from .filtres import filtres_cites
+
+    code = plan.get("indicateur") or ""
+    un_sexe = "sexe" in filtres_cites(question)[0]
+    texte = _norm(question)
+
+    if RE_POP_SEXE.match(code):
+        plan["indicateur"] = "pop_totale"
+    elif (code == "rapport_masculinite" and un_sexe
+          and not any(m in texte for m in MOTS_RAPPORT)):
+        plan["indicateur"] = "pop_totale"
+    return plan

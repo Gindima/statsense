@@ -109,7 +109,8 @@ from .filtres import corriger_filtres
 from .granularite import corriger_granularite
 from .narration import raconter
 from .periodes import corriger_periode
-from .plan import PlanInvalide, repli, valider
+
+from .plan import PlanInvalide, corriger_indicateur, repli, valider
 from .prompts import (
     SYSTEME_EXTRACTION,
     prompt_correction,
@@ -320,7 +321,9 @@ def repondre(question):
     #    dépend de `dimension`, que corriger_filtres peut avoir vidée, et
     #    la granularité dépend de `niveau`, que le cadrage peut avoir
     #    écrit en requalifiant une répartition en classement.
+
     plan = corriger_zones(plan, question)
+    plan = corriger_indicateur(plan, question)
     plan = corriger_filtres(plan, question)
     plan = corriger_periode(plan, question)
     plan = corriger_cadrage(plan, question)

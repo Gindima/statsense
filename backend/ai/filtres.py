@@ -298,6 +298,38 @@ def _fiche_indicateur(code):
     }
 
 
+# Le recensement code le sexe masculin « H », les fichiers SDMX « M ».
+# La question dit « hommes » : on emploie le code réellement stocké pour
+# l'indicateur retenu, sinon le moteur ne trouve rien et refuse à tort.
+EQUIVALENTS_SEXE = {"M": "H", "H": "M"}
+
+
+def _code_stocke(code_indicateur, cle, valeur):
+    if cle != "sexe" or valeur not in EQUIVALENTS_SEXE or not code_indicateur:
+        return valeur
+    try:
+        from catalog.models import Indicateur
+        from observations.models import Observation
+
+        # Un indicateur dérivé n'a pas d'observations propres :
+        # on regarde celles de sa base (« pop_totale[zone] / … »).
+        code = code_indicateur
+        derive = (Indicateur.objects.filter(code=code)
+                  .values_list("derive_de", flat=True).first())
+        if derive:
+            code = derive.split("/")[0].split("[")[0].strip()
+
+        qs = Observation.objects.filter(indicateur__code=code)
+        if qs.filter(dims__contains={cle: valeur}).exists():
+            return valeur
+        autre = EQUIVALENTS_SEXE[valeur]
+        if qs.filter(dims__contains={cle: autre}).exists():
+            return autre
+    except Exception:
+        pass
+    return valeur
+
+
 def corriger_filtres(plan, question):
     """
     Complète les filtres du plan par ceux réellement cités, et retire
@@ -355,7 +387,9 @@ def corriger_filtres(plan, question):
         existants.pop(cle, None)
     existants.update(cites)
 
-    plan["filtres"] = existants
+    code = plan.get("indicateur")
+    plan["filtres"] = {k: _code_stocke(code, k, v)
+                       for k, v in existants.items()}
 
     # Même examen pour la dimension d'une répartition : « répartition par
     # région » est une carte ou un classement ; « dimension: annee » est

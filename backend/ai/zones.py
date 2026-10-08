@@ -129,25 +129,112 @@ def zones_citees(question, maximum=3):
     trouvees.sort(key=lambda t: t[1])
     return [nom for nom, _ in trouvees][:maximum]
 
+# Forme courante d'une commune dont le nom officiel est plus long.
+ALIAS_COMMUNES = {"TOUBA": "TOUBA MOSQUEE"}
+
+# Mots à majuscule qui suivent souvent « de », « à »… sans être des lieux.
+NON_LIEUX = {"SENEGAL", "RGPH", "ANSD", "PIB", "NORD", "SUD", "EST",
+             "OUEST", "CENTRE", "AFRIQUE", "ETAT"}
+
+# « population de Touba », « chômage à Ndiambour » : un mot à majuscule
+# après une préposition de lieu.
+RE_LIEU = re.compile(
+    r"\b(?:à|a|au|aux|de|du|dans|sur)\s+"
+    r"([A-ZÀ-Ý][\w'’-]{2,}(?:\s+[A-ZÀ-Ý][\w'’-]+)*)")
+
+
+def _communes():
+    """
+    (clé normalisée, nom stocké) des communes au nom NON ambigu, noms
+    longs d'abord. Un nom porté par plusieurs communes (Missirah,
+    Dinguiraye…) n'est pas reconnu : on ne devine pas laquelle.
+    """
+    from collections import Counter
+    from geography.models import Niveau, Zone
+
+    noms = list(Zone.objects.filter(niveau=Niveau.COMMUNE)
+                .values_list("nom", flat=True))
+    compte = Counter(norm(n) for n in noms)
+    vus, out = set(), []
+    for nom in noms:
+        cle = norm(nom)
+        if compte[cle] == 1 and len(cle) >= 3 and cle not in vus:
+            vus.add(cle)
+            out.append((cle, nom))
+    return sorted(out, key=lambda x: -len(x[0]))
+
+
+def communes_citees(question, maximum=3):
+    """Communes nommées dans la question, dans l'ordre d'apparition."""
+    texte = f" {norm(question)} "
+    for alias, cible in ALIAS_COMMUNES.items():
+        if f" {alias} " in texte and f" {cible} " not in texte:
+            texte = texte.replace(f" {alias} ", f" {cible} ")
+
+    trouvees = []
+    for cle, nom in _communes():
+        if len(trouvees) >= maximum:
+            break
+        position = texte.find(f" {cle} ")
+        if position == -1:
+            continue
+        trouvees.append((nom, position))
+        texte = texte[:position] + " " + texte[position + len(cle) + 2:]
+    trouvees.sort(key=lambda t: t[1])
+    return [nom for nom, _ in trouvees]
+
+
+def _vocabulaire_catalogue():
+    """Mots des libellés et synonymes : « Natalité » n'est pas un lieu."""
+    from catalog.models import Indicateur
+    mots = set()
+    for libelle, synonymes in Indicateur.objects.values_list(
+            "libelle", "synonymes"):
+        mots.update(norm(" ".join([libelle] + list(synonymes or []))).split())
+    return mots
+
+
+def lieu_inconnu(question):
+    """Un lieu nommé avec une majuscule mais absent du référentiel, ou None."""
+    vocabulaire = None
+    for m in RE_LIEU.finditer(str(question or "")):
+        mots = norm(m.group(1)).split()
+        if any(w in NON_LIEUX for w in mots):
+            continue
+        if vocabulaire is None:
+            vocabulaire = _vocabulaire_catalogue()
+        if any(w in vocabulaire for w in mots):
+            continue
+        return m.group(1)
+    return None
+
 
 def corriger_zones(plan, question):
     """
     Remplace les zones du plan par celles réellement citées.
 
-    Quand la question n'en nomme aucune, le sens dépend de la méthode :
-    une valeur, une évolution ou une répartition portent sur le pays
-    entier — « quel est le taux de chômage actuel ? » n'est pas une
-    question incomplète — tandis qu'un classement ou une carte portent
-    sur toutes les zones d'un niveau, et n'ont donc pas besoin qu'on en
-    nomme une.
+    Ordre : régions et départements, puis communes, puis lieu inconnu.
+    Le pays entier n'est retenu que si la question ne nomme AUCUN lieu :
+    « population de Touba » ne doit jamais rendre la population du
+    Sénégal.
     """
     citees = zones_citees(question)
+    if citees in ([], ["SENEGAL"]):
+        communes = communes_citees(question)
+        if communes:
+            citees = communes
 
     if citees:
         plan["zones"] = citees
+        return plan
+
+    inconnu = lieu_inconnu(question)
+    if inconnu:
+        # Transmis tel quel : le moteur ne le trouvera pas et refusera
+        # (zone_inconnue), au lieu de répondre pour le pays entier.
+        plan["zones"] = [inconnu]
     elif plan.get("methode") in ("valeur_simple", "evolution", "repartition"):
         plan["zones"] = ["SENEGAL"]
     else:
         plan["zones"] = []
-
     return plan

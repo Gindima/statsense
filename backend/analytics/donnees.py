@@ -366,6 +366,14 @@ def resoudre_zones(niveau=None, noms=None, parent=None):
         return [zone_par_nom(n) for n in noms]
     return list(qs)
 
+def situer(zone):
+    """« PARIS (SIMBANDI BALANTE, GOUDOMP) » : la zone et ses parents
+    jusqu'au département, pour qu'une localité soit identifiable."""
+    noms, p = [], zone.parent
+    while p is not None and p.niveau != Niveau.REGION:
+        noms.append(p.nom)
+        p = p.parent
+    return f"{zone.nom} ({', '.join(noms)})" if noms else zone.nom
 
 def zone_par_nom(nom):
     """Résout un nom ou un code de zone en une Zone, ou lève une erreur."""
@@ -382,10 +390,26 @@ def zone_par_nom(nom):
         candidats = list(Zone.objects.filter(code=nom))
     if not candidats:
         raise ErreurAnalyse(
-            f"Zone « {nom} » introuvable.", motif="zone_inconnue",
+            f"« {nom} » ne figure pas parmi les régions, départements et "
+            f"communes reconnus. Précisez la commune ou le département.",
+            motif="zone_inconnue",
         )
-    # Ambiguïté fréquente : « Dakar » est à la fois région et département.
-    # On privilégie le niveau le plus large.
+    
     candidats.sort(key=lambda z: ORDRE.index(z.niveau)
                    if z.niveau in ORDRE else 99)
-    return candidats[0]
+    meilleur = candidats[0]
+
+    # Plusieurs communes ou localités du même nom, sans zone plus large
+    # homonyme : on ne choisit pas au hasard. Mesuré : 1 165 noms de
+    # localités sont portés par plusieurs communes.
+    memes = [z for z in candidats if z.niveau == meilleur.niveau]
+    if meilleur.niveau in (Niveau.COMMUNE, Niveau.QUARTIER) \
+            and len(memes) > 1:
+        lieux = ", ".join(situer(z) for z in memes[:5])
+        raise ErreurAnalyse(
+            f"{len(memes)} lieux portent le nom « {meilleur.nom} » : "
+            f"{lieux}{'…' if len(memes) > 5 else ''}. "
+            f"Précisez la commune ou le département.",
+            motif="zone_ambigue",
+        )
+    return meilleur

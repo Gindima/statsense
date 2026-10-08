@@ -18,6 +18,8 @@ const MOTIFS = {
   serie_trop_courte: "Série trop courte",
   aucun_candidat: "Aucun indicateur correspondant",
   non_agregeable: "Agrégation impossible",
+  zone_inconnue: "Lieu non reconnu",
+  zone_ambigue: "Plusieurs lieux portent ce nom",
 };
 
 export default function Refus({ reponse, onSuggestion }) {

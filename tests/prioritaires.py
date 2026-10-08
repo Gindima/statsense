@@ -68,6 +68,16 @@ CAS = [
     ("Quelle est la différence entre population recensée et "
      "population projetée ?",
      "question documentaire ou clarification entre deux indicateurs"),
+    ("Combien d'hommes vivent à Dakar ?",
+     "pop_totale + sexe=H — 2 018 759 (correctif #4)"),
+    ("Quelle est la population de Yoff ?",
+     "commune YOFF — 119 351 (correctif #3)"),
+    ("Quelle est la population de Touba ?",
+     "commune TOUBA MOSQUEE — 1 120 824 (correctif #3)"),
+    ("Quelle est la population de Paris ?",
+     "refus zone_inconnue, PAS le Sénégal (correctif #3)"),
+    ("Quel est le taux de chômage des femmes en 2019 ?",
+     "periode fin=2019, PAS la dernière année (correctif #1)"),
 ]
 
 

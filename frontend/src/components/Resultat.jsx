@@ -114,24 +114,41 @@ function Courbe({ lignes, unite }) {
   );
 }
 
-function Variation({ meta, unite }) {
-  const pct = meta?.variation_pct;
-  const tcam = meta?.tcam_pct;
-  if (pct === null && tcam === null) return null;
 
-  const chiffres = [
-    pct !== null &&
-      pct !== undefined && {
-        etiquette: `Variation ${meta.base_comparaison === "t-4" ? "sur un an" : "sur la période"}`,
-        valeur: `${pct > 0 ? "+" : ""}${nombre(pct, "%")} %`,
-      },
-    tcam !== null &&
-      tcam !== undefined && {
+function Variation({ meta }) {
+  if (!meta) return null;
+  const signe = (v) => (Number(v) > 0 ? "+" : "");
+  const entre =
+    meta.debut && meta.fin
+      ? `entre ${periode(meta.debut)} et ${periode(meta.fin)}`
+      : "sur la période";
+
+  const chiffres = [];
+  if (meta.est_taux) {
+    if (meta.variation_absolue != null)
+      chiffres.push({
+        etiquette: `Écart ${entre}`,
+        valeur: `${signe(meta.variation_absolue)}${nombre(meta.variation_absolue, "%")} points`,
+      });
+  } else {
+    if (meta.variation_pct != null)
+      chiffres.push({
+        etiquette: `Variation ${entre}`,
+        valeur: `${signe(meta.variation_pct)}${nombre(meta.variation_pct, "%")} %`,
+      });
+    if (meta.tcam_pct != null)
+      chiffres.push({
         etiquette: "Croissance annuelle moyenne",
-        valeur: `${tcam > 0 ? "+" : ""}${nombre(tcam, "%")} %`,
-      },
-  ].filter(Boolean);
+        valeur: `${signe(meta.tcam_pct)}${nombre(meta.tcam_pct, "%")} %`,
+      });
+  }
+  if (meta.glissement_pct != null)
+    chiffres.push({
+      etiquette: "Glissement annuel (T comparé à T-4)",
+      valeur: `${signe(meta.glissement_pct)}${nombre(meta.glissement_pct, "%")} %`,
+    });
 
+  if (!chiffres.length) return null;
   return (
     <div className="flex gap-10 flex-wrap mb-5">
       {chiffres.map((c) => (

@@ -30,6 +30,12 @@ MIN_ANNEE, MAX_ANNEE = 1900, 2030
 DEPUIS = ("depuis", "a partir de", "des ", "entre")
 JUSQUA = ("jusqu a", "jusqu en", "jusque", "avant")
 
+# Le mot doit être SUIVI de l'année pour compter.
+RE_DEPUIS = re.compile(
+    r"\b(?:depuis|a partir de|des|entre)\s+(?:19|20)\d{2}\b")
+RE_JUSQUA = re.compile(
+    r"\b(?:jusqu a|jusqu en|jusque en|jusque|avant)\s+(?:19|20)\d{2}\b")
+
 
 def _norm(s):
     s = unicodedata.normalize("NFD", str(s or ""))
@@ -68,9 +74,9 @@ def periodes_citees(question):
         return annees[0], annees[-1]
 
     seule = annees[0]
-    if any(m in texte for m in DEPUIS):
+    if RE_DEPUIS.search(texte):
         return seule, None
-    if any(m in texte for m in JUSQUA):
+    if RE_JUSQUA.search(texte):
         return None, seule
     return None, seule
 
