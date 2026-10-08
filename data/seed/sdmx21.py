@@ -197,6 +197,7 @@ TOTAL_A_CONSTRUIRE = {
 # Écart relatif au-delà duquel un total est jugé incompatible avec la somme
 # de ses composantes. 0,5 % absorbe les arrondis de publication.
 TOLERANCE_TOTAL = Decimal("0.005")
+REGION_PAR_DEPARTEMENTS = {"population"}
 
 # --- attributs de dimension -> clé stockée dans Observation.dims -----------
 DIMENSIONS = {
@@ -361,6 +362,46 @@ class ChargeurSDMX21:
             )
 
     @staticmethod
+    def _aligner_regions(mesures, compteur):
+        """
+        Remplace la valeur d'une région par la somme de ses départements
+        quand les deux divergent.
+
+        Constaté dans population.xml : en 2023, 12 régions sur 14 portent
+        la population d'une autre région (Thiès 245 147, celle de
+        Kédougou). Hommes, femmes et total sont déplacés ensemble :
+        _corriger_totaux ne peut pas le voir. Les départements sont justes
+        (ceux de Thiès somment à 2 463 679, le chiffre du RGPH-5).
+
+        Seulement si TOUS les départements de la région sont présents :
+        une somme partielle sous-estimerait.
+        """
+        attendus = defaultdict(set)
+        for zid, pid in (Zone.objects.filter(niveau=Niveau.DEPARTEMENT)
+                         .values_list("id", "parent_id")):
+            attendus[pid].add(zid)
+
+        parts = defaultdict(dict)
+        for (zone, periode, cle), (_d, valeur, _s) in mesures.items():
+            if zone.niveau == Niveau.DEPARTEMENT and zone.parent_id:
+                parts[(zone.parent_id, periode, cle)][zone.id] = valeur
+
+        for (zone, periode, cle), (dims, valeur, sexe) in list(mesures.items()):
+            if zone.niveau != Niveau.REGION:
+                continue
+            p = parts.get((zone.id, periode, cle))
+            if not p or set(p) != attendus.get(zone.id, set()):
+                continue
+            somme = sum(p.values())
+            if valeur > 0 and abs(somme - valeur) / valeur <= TOLERANCE_TOTAL:
+                continue
+            mesures[(zone, periode, cle)] = (dims, somme, sexe)
+            compteur.correction(
+                f"{zone.nom} · {periode} · {dict(cle) or 'total'} — publié "
+                f"{valeur:,.0f}, somme des départements {somme:,.0f} ; "
+                f"retenu {somme:,.0f}".replace(",", " "))
+
+    @staticmethod
     def _construire_totaux(mesures, config, compteur):
         """
         Crée le total absent de la source, par somme des modalités NOMMÉES
@@ -496,6 +537,9 @@ class ChargeurSDMX21:
 
         if cle_fichier in TOTAL_PAR_SOMME:
             self._corriger_totaux(mesures, compteur)
+
+        if cle_fichier in REGION_PAR_DEPARTEMENTS:
+            self._aligner_regions(mesures, compteur)
 
         config = TOTAL_A_CONSTRUIRE.get(cle_fichier)
         if config:
