@@ -110,11 +110,14 @@ from .donnees import (
     verifier_dimensions,
     verifier_granularite,
     zone_par_nom,
+    DERIVES, PART,
 )
 from .avertissements import avertissements_pour
 from .equivalences import serie_equivalente
 from .resultats import AnalysisResult, ErreurAnalyse, source_de
 from .repartition import repartition  # noqa: E402
+
+from observations.models import Observation
 
 TOP_N_DEFAUT = 10
 MAX_LIGNES = 60
@@ -911,6 +914,53 @@ def _refus_complete(premiere, remplacant, seconde):
         alternatives=alternatives,
     )
 
+def _ventilation_requise(plan, erreur):
+    """
+    Un indicateur publié UNIQUEMENT ventilé (l'indice de bien-être n'existe
+    que par quintile) n'a aucune valeur « tout confondu ». Sans la modalité,
+    le moteur ne trouve rien et dit « aucune donnée », ce qui ressemble à
+    une base vide. On dit à la place ce qu'il faut préciser.
+    """
+    if erreur.motif not in ("donnee_absente", "serie_trop_courte"):
+        return None
+    try:
+        ind = get_indicateur(plan.get("indicateur"))
+    except ErreurAnalyse:
+        return None
+    if ind.code in DERIVES or ind.code == PART or not ind.dimensions:
+        return None
+    if Observation.objects.filter(indicateur=ind, dims={}).exists():
+        return None
+
+    filtres = plan.get("filtres") or {}
+    obs = Observation.objects.filter(indicateur=ind)
+    requises = [d for d in ind.dimensions if d not in filtres
+                and not obs.exclude(dims__has_key=d).exists()]
+    if not requises:
+        return None
+    d = requises[0]
+
+    if d == "quintile":
+        return ErreurAnalyse(
+            f"« {ind.libelle} » n'est publié que par quintile de niveau de "
+            f"vie : pour chaque zone, la part de sa population dans chaque "
+            f"quintile (le plus pauvre, deuxième, intermédiaire, quatrième, "
+            f"le plus aisé). Il n'existe pas de valeur unique par région. "
+            f"Précisez le quintile.",
+            motif="ventilation_requise",
+            alternatives=[
+                "Classe les régions selon l'indice de bien-être, quintile le "
+                "plus aisé, en 2023.",
+                "Quel est l'indice de bien-être du quintile le plus pauvre à "
+                "Kolda en 2023 ?",
+            ],
+        )
+    from .repartition import _nom_dimension
+    return ErreurAnalyse(
+        f"« {ind.libelle} » n'est publié que ventilé par "
+        f"{_nom_dimension(d)} : précisez la modalité voulue.",
+        motif="ventilation_requise",
+    )
 
 def executer(plan):
     """
@@ -936,6 +986,9 @@ def executer(plan):
     try:
         resultat = fn(plan)
     except ErreurAnalyse as premiere:
+        precise = _ventilation_requise(plan, premiere)
+        if precise is not None:
+            raise precise from None
         if premiere.motif not in MOTIFS_RELAYABLES:
             raise
 

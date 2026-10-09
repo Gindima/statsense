@@ -186,6 +186,28 @@ MOTS = [
      ("milieu", "R")),
 ]
 
+# Quintiles de niveau de vie. Appliqués SEULEMENT à un indicateur qui
+# déclare la dimension : « la région la plus pauvre » ne doit pas poser un
+# filtre de quintile sur le chômage.
+QUINTILES = [
+    (("quintile le plus pauvre", "plus pauvre", "plus pauvres",
+      "plus demunis"), "PLUS_BAS"),
+    (("quintile le plus riche", "quintile le plus aise", "plus riche",
+      "plus riches", "plus aise", "plus aises", "plus aisee",
+      "plus aisees"), "PLUS_ELEVE"),
+    (("deuxieme quintile", "second quintile"), "SECOND"),
+    (("quintile intermediaire", "quintile moyen", "troisieme quintile"),
+     "MOYEN"),
+    (("quatrieme quintile",), "QUATRIEME"),
+]
+CODES_QUINTILE = {code for _, code in QUINTILES}
+
+
+def quintile_cite(question):
+    texte = f" {_norm(question)} "
+    vus = {code for motifs, code in QUINTILES
+           if any(f" {m} " in texte for m in motifs)}
+    return vus.pop() if len(vus) == 1 else None
 
 def _norm(s):
     s = unicodedata.normalize("NFD", str(s or ""))
@@ -339,6 +361,15 @@ def _code_stocke(code_indicateur, cle, valeur):
         pass
     return valeur
 
+def _modalites(code, cle):
+    """Modalités réellement stockées pour cette dimension, ou ensemble vide."""
+    try:
+        from catalog.models import Indicateur
+        from analytics.donnees import modalites
+        ind = Indicateur.objects.filter(code=code).first()
+        return set(modalites(ind, cle)) if ind else set()
+    except Exception:
+        return set()
 
 def corriger_filtres(plan, question):
     """
@@ -397,9 +428,29 @@ def corriger_filtres(plan, question):
         existants.pop(cle, None)
     existants.update(cites)
 
+    if fiche and "quintile" in fiche["dimensions"]:
+        q = quintile_cite(question)
+        if q:
+            existants["quintile"] = q
+        elif existants.get("quintile") not in CODES_QUINTILE:
+            existants.pop("quintile", None)
+
     code = plan.get("indicateur")
-    plan["filtres"] = {k: _code_stocke(code, k, v)
-                       for k, v in existants.items()}
+    filtres = {k: _code_stocke(code, k, v) for k, v in existants.items()}
+
+    # Une valeur proposée par le modèle seul doit exister dans les données.
+    # Constaté : `type: urbain` sur l'accès à l'eau, dont les types sont des
+    # sources (robinet, puits…). Les valeurs venues de la question restent :
+    # ce sont elles qui portent les refus légitimes. L'âge est traité plus
+    # loin, par tranches.
+    if fiche:
+        for cle in list(filtres):
+            if cle in cites or cle == "age":
+                continue
+            valides = _modalites(code, cle)
+            if valides and filtres[cle] not in valides:
+                filtres.pop(cle)
+    plan["filtres"] = filtres
 
     # Même examen pour la dimension d'une répartition : « répartition par
     # région » est une carte ou un classement ; « dimension: annee » est

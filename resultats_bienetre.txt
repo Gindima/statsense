@@ -1,0 +1,49 @@
+
+ 1. Quelles régions avaient l'indice de bien-être le plus élevé en 2023 ?   (63s, origine modele)
+    plan    : classement · indice_bienetre · niveau=region · periode=None→2023 · top10 desc
+    obtenu  : REFUS ventilation_requise
+    message : « Indice de bien-être » n'est publié que par quintile de niveau de vie : pour chaque zone, la part de sa population dans chaque quintile (le plus pauvre, deuxième, intermédiaire, quatrième, le plus ai
+
+ 2. Classe les régions selon l'indice de bien-être, quintile le plus aisé, en 2023.   (33s, origine modele)
+    plan    : classement · indice_bienetre · niveau=region · periode=None→2023 · filtres={'quintile': 'PLUS_ELEVE'} · top10 desc
+    obtenu  : 10 ligne(s), unité « indice »
+              DAKAR = 53.9
+              THIES = 19.5
+              DIOURBEL = 17.0
+              SAINT-LOUIS = 12.5
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+    note    : Série irrégulière : onze points entre 1997 et 2023. Les écarts entre deux points ne sont pas comparables à un rythme annuel.
+
+ 3. Quel est l'indice de bien-être du quintile le plus pauvre à Kolda en 2023 ?   (30s, origine modele)
+    plan    : repartition · indice_bienetre · niveau=region · zones=KOLDA · periode=None→2023 · filtres={'quintile': 'PLUS_BAS'} · dim=quintile
+    obtenu  : REFUS non_agregeable
+    message : « Indice de bien-être » est un indice : une répartition supposerait d'additionner ses valeurs entre catégories, ce qui n'aurait pas de sens.
+
+ 4. Compare l'évolution de l'indice de bien-être de Dakar, Thiès et Ziguinchor entre 2015 et 2023.   (45s, origine modele)
+    plan    : evolution · indice_bienetre · niveau=region · zones=DAKAR,THIES,ZIGUINCHOR · periode=2015→2023
+    obtenu  : REFUS ventilation_requise
+    message : « Indice de bien-être » n'est publié que par quintile de niveau de vie : pour chaque zone, la part de sa population dans chaque quintile (le plus pauvre, deuxième, intermédiaire, quatrième, le plus ai
+
+ 5. Quelle est la différence d'accès à une source d'eau améliorée entre les milieux urbain et rural ?   (38s, origine modele)
+    plan    : comparaison · acces_eau · zones=SENEGAL · filtres={'type': 'urbain'} · dim=milieu
+    obtenu  : REFUS donnee_absente
+    message : Pas assez de données pour comparer « Accès à une source d'eau améliorée » en 2023 : SENEGAL · Rural, SENEGAL · Urbain sans donnée.
+
+ 6. Quel est le taux de chômage des femmes à Dakar ?   (34s, origine modele)
+    plan    : valeur_simple · taux_chomage_a · niveau=region · zones=DAKAR · filtres={'sexe': 'F'}
+    obtenu  : 1 ligne(s), unité « % »
+              DAKAR 2025 = 19.4
+
+ 7. Quelle région compte le moins d'habitants ?   (29s, origine modele)
+    plan    : classement · pop_totale · niveau=region · zones=SENEGAL · top5 asc
+    obtenu  : 5 ligne(s), unité « personnes »
+              KEDOUGOU = 245147.0
+              SEDHIOU = 589264.0
+              ZIGUINCHOR = 617568.0
+              KAFFRINE = 820404.0
+              … et 1 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+7 questions en 272s
+

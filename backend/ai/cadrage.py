@@ -516,6 +516,14 @@ def corriger_cadrage(plan, question):
     if sens:
         plan["ordre"] = sens
 
+    # Une répartition sur une dimension déjà filtrée ne demande qu'UNE
+    # modalité. Constaté : « l'indice du quintile le plus pauvre à Kolda »
+    # -> répartition par quintile ET filtre quintile = le plus pauvre.
+    if (plan.get("methode") == "repartition" and plan.get("dimension")
+            and plan["dimension"] in (plan.get("filtres") or {})):
+        plan["methode"] = "valeur_simple"
+        plan["dimension"] = None
+
     # --- cohérence de la méthode ---
     # Une répartition suppose une ventilation. Sans dimension elle n'a
     # plus d'objet ; avec un découpage géographique dans la question, ce

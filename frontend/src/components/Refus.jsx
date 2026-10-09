@@ -22,7 +22,7 @@ const MOTIFS = {
   zone_ambigue: "Plusieurs lieux portent ce nom",
   age_non_traite: "Groupe d'âge non traité",
   analyse_non_traitee: "Analyse non proposée",
-
+  ventilation_requise: "Précision nécessaire",
 };
 
 export default function Refus({ reponse, onSuggestion }) {
