@@ -224,24 +224,34 @@ def _valeur_annee(valeur):
     return bool(m) and 1900 <= int(m.group(1)) <= 2100
 
 
-def _declaree(cle, dimensions):
+def _nom_declare(cle, dimensions):
     """
-    La clé figure-t-elle parmi les dimensions déclarées de l'indicateur ?
+    Nom de la dimension déclarée qui correspond à la clé, ou None.
 
-    Singulier et pluriel sont acceptés de part et d'autre : le modèle
-    écrit « secteurs » là où le catalogue déclare « secteur », et ce
-    n'est pas une erreur de fond.
+    Singulier, pluriel et suffixes sont tolérés — « secteurs » pour
+    « secteur », « milieu_residence » pour « milieu » — mais c'est le nom
+    DÉCLARÉ qui est rendu : le moteur compare les clés exactement.
     """
     n = _compacte(cle)
     if not n:
-        return False
+        return None
     for d in dimensions or ():
         m = _compacte(d)
         if n == m:
-            return True
+            return d
         if len(n) >= 4 and len(m) >= 4 and (n.startswith(m) or m.startswith(n)):
-            return True
-    return False
+            return d
+    return None
+
+
+def _declaree(cle, dimensions):
+    return _nom_declare(cle, dimensions) is not None
+
+
+def _valeur_multiple(valeur):
+    """« urbain,rural », « H et F » : plusieurs modalités, donc aucune."""
+    texte = str(valeur or "")
+    return "," in texte or "/" in texte or " et " in f" {_norm(texte)} "
 
 
 def filtres_cites(question):
@@ -351,7 +361,8 @@ def corriger_filtres(plan, question):
     # Une valeur qui désigne le tout exprime l'absence de filtre ; une
     # année désigne une période, portée par `periode`.
     for cle in list(existants):
-        if _valeur_totale(existants[cle]) or _valeur_annee(existants[cle]):
+        v = existants[cle]
+        if _valeur_totale(v) or _valeur_annee(v) or _valeur_multiple(v):
             existants.pop(cle)
 
     # Géographie et temps : jamais des ventilations.
@@ -371,15 +382,14 @@ def corriger_filtres(plan, question):
                 cites.pop(cle)    # le mot nomme l'indicateur
                 existants.pop(cle, None)
 
-        # Une clé que seul le modèle propose doit être déclarée. Celles
-        # venues de la question restent, même non déclarées : ce sont
-        # elles qui portent les refus légitimes.
         for cle in list(existants):
             if cle in cites:
                 continue
-            if not _declaree(cle, fiche["dimensions"]):
+            nom = _nom_declare(cle, fiche["dimensions"])
+            if nom is None:
                 existants.pop(cle)
-
+            elif nom != cle:
+                existants[nom] = existants.pop(cle)
     # Les dimensions détectables sont reprises de la question, y compris
     # pour effacer un filtre que le modèle aurait inventé. On ne touche
     # qu'à celles qui ont survécu aux tests précédents.
@@ -399,7 +409,7 @@ def corriger_filtres(plan, question):
     if d:
         if _rejetee(d) or _valeur_totale(d) or _valeur_annee(d):
             plan["dimension"] = None
-        elif fiche and not _declaree(d, fiche["dimensions"]):
-            plan["dimension"] = None
-
+        elif fiche:
+            plan["dimension"] = _nom_declare(d, fiche["dimensions"])
+    
     return plan

@@ -651,9 +651,14 @@ def geographique(plan):
               "couvertes": len(lignes), "filtres": filtres},
     )
 
+
 # --- 5. comparaison --------------------------------------------------------
 
-LIBELLES_SEXE = {"H": "Hommes", "M": "Hommes", "F": "Femmes"}
+LIBELLES_DIM = {
+    "sexe": {"H": "Hommes", "M": "Hommes", "F": "Femmes"},
+    "milieu": {"U": "Urbain", "R": "Rural"},
+}
+LIBELLES_SEXE = LIBELLES_DIM["sexe"]
 
 
 def _fr(x, decimales=0):
@@ -663,9 +668,9 @@ def _fr(x, decimales=0):
 
 def comparaison(plan):
     """
-    Plusieurs zones, ou les deux sexes, côte à côte, à la même période.
-    Chaque valeur est calculée comme une valeur simple ; l'écart et le
-    rapport le sont ici, en Decimal.
+    Plusieurs zones, les deux sexes ou les deux milieux, côte à côte, à la
+    même période. Chaque valeur est calculée comme une valeur simple ;
+    l'écart l'est ici, en Decimal.
     """
     ind, filtres = _prepare(plan)
     periode = _periode(ind, plan)
@@ -676,17 +681,36 @@ def comparaison(plan):
     zones = [zone_par_nom(n, niveau=niveau)
              for n in (plan.get("zones") or ["SENEGAL"])]
 
-    sexes = [None]
-    if plan.get("dimension") == "sexe":
-        filtres = {k: v for k, v in filtres.items() if k != "sexe"}
-        sexes = modalites(ind, "sexe") or [None]
+    dim = plan.get("dimension") if plan.get("dimension") in LIBELLES_DIM \
+        else None
+    modal = [None]
+    if dim:
+        filtres = {k: v for k, v in filtres.items() if k != dim}
+        modal = modalites(ind, dim) or [None]
+
+    def _filtre(s):
+        return {**filtres, dim: s} if s else filtres
+
+    # Sans période demandée : la dernière année où toutes les modalités
+    # sont publiées, plutôt qu'un refus sur l'année la plus récente.
+    notes = []
+    p = plan.get("periode") or {}
+    if dim and not (p.get("debut") or p.get("fin")):
+        for cand in reversed(periodes_disponibles(ind)):
+            if all(valeur(ind, z, cand, _filtre(s)) is not None
+                   for z in zones for s in modal):
+                if cand != periode:
+                    notes.append(f"Dernière année où toutes les modalités "
+                                 f"sont publiées : {cand}.")
+                periode = cand
+                break
 
     lignes, manquantes = [], []
     for z in zones:
-        for s in sexes:
-            f = {**filtres, "sexe": s} if s else filtres
-            nom = f"{z.nom} · {LIBELLES_SEXE.get(s, s)}" if s else z.nom
-            v = valeur(ind, z, periode, f)
+        for s in modal:
+            nom = (f"{z.nom} · {LIBELLES_DIM[dim].get(s, s)}" if s
+                   else z.nom)
+            v = valeur(ind, z, periode, _filtre(s))
             if v is None:
                 manquantes.append(nom)
                 continue
@@ -697,25 +721,37 @@ def comparaison(plan):
     if len(lignes) < 2:
         raise ErreurAnalyse(
             f"Pas assez de données pour comparer « {ind.libelle} » en "
-            f"{periode} : {', '.join(manquantes) or 'aucune zone'} sans "
-            f"valeur.", motif="donnee_absente")
+            f"{periode} : {', '.join(manquantes) or 'une seule valeur'} "
+            f"sans donnée.", motif="donnee_absente")
 
-    if plan.get("dimension") == "sexe":
-        # Lignes gardées dans l'ordre des zones (Dakar H, Dakar F, Thiès…) :
-        # l'écart utile est DANS chaque zone, pas entre Dakar · Hommes et
-        # Thiès · Femmes.
-        notes = []
+    def _parts(z):
+        return {l["zone"].split(" · ")[-1]: Decimal(l["valeur"])
+                for l in lignes if l["code"] == z.code}
+
+    ecart = None
+    if dim == "sexe":
+        # Lignes gardées dans l'ordre des zones : l'écart utile est DANS
+        # chaque zone, pas entre Dakar · Hommes et Thiès · Femmes.
         for z in zones:
-            parts = {l["zone"].split(" · ")[-1]: Decimal(l["valeur"])
-                     for l in lignes if l["code"] == z.code}
-            h, f = parts.get("Hommes"), parts.get("Femmes")
+            h, f = _parts(z).get("Hommes"), _parts(z).get("Femmes")
             if h is not None and f:
                 d = h - f
                 plus = (f"{_fr(d)} hommes de plus que de femmes" if d >= 0
                         else f"{_fr(-d)} femmes de plus que d'hommes")
                 notes.append(f"{z.nom} : {plus} "
                              f"({_fr(h / f * 100, 2)} hommes pour 100 femmes).")
-        ecart = None
+    elif dim == "milieu":
+        for z in zones:
+            u, r = _parts(z).get("Urbain"), _parts(z).get("Rural")
+            if u is not None and r is not None:
+                d = u - r
+                sens = ("en faveur du milieu urbain" if d >= 0
+                        else "en faveur du milieu rural")
+                quantite = (f"{_fr(abs(d), 1)} points" if _est_un_taux(ind.unite)
+                            else f"{_fr(abs(d), 0 if ind.agregeable else 2)} "
+                                 f"{ind.unite}")
+                notes.append(f"{z.nom} : écart de {quantite} entre urbain "
+                             f"et rural, {sens}.")
     else:
         lignes.sort(key=lambda l: l["valeur"], reverse=True)
         haut, bas = lignes[0], lignes[-1]
@@ -729,7 +765,8 @@ def comparaison(plan):
                     f"{_fr(ecart, 0 if ind.agregeable else 2)} {ind.unite}")
             note += (f", soit {_fr(v_haut / v_bas, 2)} fois plus."
                      if ind.agregeable and v_bas > 0 else ".")
-        notes = [note]
+        notes.append(note)
+
     if manquantes:
         notes.append(f"Sans donnée, donc absentes de la comparaison : "
                      f"{', '.join(manquantes)}.")
@@ -744,9 +781,8 @@ def comparaison(plan):
         notes=notes,
         meta={"indicateur": ind.libelle, "periode": periode,
               "zones": [z.nom for z in zones], "ecart": ecart,
-              "filtres": filtres, "dimension": plan.get("dimension")},
+              "filtres": filtres, "dimension": dim},
     )
-
 
 # --- dispatcher ------------------------------------------------------------
 

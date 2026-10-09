@@ -117,8 +117,15 @@ def resume_factuel(question, resultat):
         d, f = resultat.lignes[0], resultat.lignes[-1]
         phrase = (f"{ind} pour {m.get('zone', '')} : {_fmt(d['valeur'])} "
                   f"{resultat.unite} en {d['periode']}, "
-                  f"{_fmt(f['valeur'])} en {f['periode']} "
-                  f"({n} points).")
+                  f"{_fmt(f['valeur'])} {resultat.unite} en {f['periode']} "
+                  f"({n} valeurs publiées).")
+    elif "ecart" in m:
+        # Comparaison : chaque valeur nommée, sans « en tête », qui serait
+        # faux quand les lignes suivent l'ordre des modalités.
+        valeurs = " ; ".join(
+            f"{l.get('zone', '')} : {_fmt(l['valeur'])} {resultat.unite}"
+            for l in resultat.lignes)
+        phrase = f"{ind} ({m.get('periode', '')}) — {valeurs}."
     else:
         tete = resultat.lignes[0]
         if m.get("unique"):
@@ -141,13 +148,12 @@ def resume_factuel(question, resultat):
         phrase += " " + " ".join(resultat.notes)
     return phrase
 
-
 def _fmt(v):
     v = float(v)
     if v == int(v) and abs(v) >= 1000:
         return f"{int(v):,}".replace(",", " ")
-    return f"{v:,.2f}".replace(",", " ").rstrip("0").rstrip(".")
-
+    s = f"{v:,.2f}".replace(",", " ").rstrip("0").rstrip(".")
+    return s.replace(".", ",")
 
 def raconter(question, resultat):
     """

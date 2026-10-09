@@ -368,36 +368,52 @@ def deux_sexes(question):
     return {"F", "M"} <= vus
 
 
+def deux_milieux(question):
+    """La question nomme-t-elle l'urbain ET le rural ?"""
+    texte = f" {_norm(question)} "
+    urbain = any(f" {m} " in texte for m in
+                 ("urbain", "urbaine", "urbains", "urbaines"))
+    rural = any(f" {m} " in texte for m in
+                ("rural", "rurale", "ruraux", "rurales"))
+    return urbain and rural
+
+
 def corriger_comparaison(plan, question):
     """
-    Plusieurs zones citées, ou les deux sexes : la question compare.
+    Plusieurs zones, les deux sexes ou les deux milieux : la question
+    compare.
 
     Constaté : « Compare la population de Dakar et de Thiès » rendait le
-    classement des communes de Dakar ; « … masculine et féminine de Dakar
-    et Thiès » la seule répartition de Dakar, Thiès disparu sans mention.
+    classement des communes de Dakar ; « différence entre urbain et
+    rural » une répartition, refusée parce qu'un taux ne se répartit pas.
     """
     if plan.get("methode") not in ("valeur_simple", "classement",
                                    "repartition", "comparaison"):
         return plan
 
-    sexes = False
-    if deux_sexes(question) and plan.get("indicateur"):
+    axe = None
+    if plan.get("indicateur") and (deux_sexes(question)
+                                   or deux_milieux(question)):
         from catalog.models import Indicateur
         dims = (Indicateur.objects.filter(code=plan["indicateur"])
                 .values_list("dimensions", flat=True).first()) or []
-        sexes = "sexe" in dims
+        if deux_sexes(question) and "sexe" in dims:
+            axe = "sexe"
+        elif deux_milieux(question) and "milieu" in dims:
+            axe = "milieu"
 
-    if len(plan.get("zones") or []) < 2 and not sexes:
+    if len(plan.get("zones") or []) < 2 and not axe:
         return plan
 
     plan["methode"] = "comparaison"
-    plan["dimension"] = "sexe" if sexes else None
+    plan["dimension"] = axe
     plan["top_n"] = None
     plan["niveau"] = plan.get("niveau_zone")
-    if sexes:
+    if axe:
         plan["filtres"] = {k: v for k, v in (plan.get("filtres") or {}).items()
-                           if k != "sexe"}
+                           if k != axe}
     return plan
+
 
 RE_QUELLE_ANNEE = re.compile(r"\bquelles? annees?\b|\bannees? ou\b")
 RE_DUREE = re.compile(r"\b(annees|serie|courbe|historique|periode)\b")
