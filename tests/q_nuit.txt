@@ -1,0 +1,75 @@
+# A. Recensement, quartiers, projections
+Quelle est la population recensée au Sénégal en 2023 ?
+Combien de personnes vivent à Dakar d'après le dernier recensement disponible ?
+Combien de ménages compte le quartier Médina ?
+Combien de concessions compte le quartier Darou Salam ?
+Quelle est la taille moyenne des ménages du quartier Castor ?
+Quel est le rapport entre la population recensée et le nombre de ménages dans le quartier Liberté I ?
+Combien de concessions ont été recensées au Sénégal en 2023 ?
+Calcule la taille moyenne des ménages au niveau national en 2023.
+Calcule le nombre moyen de ménages par concession au niveau national.
+Calcule le rapport de masculinité national à partir des données disponibles.
+Quelle est la part de la population de Dakar dans la population totale recensée en 2023 ?
+Quels sont les 10 quartiers les plus peuplés ?
+Quels sont les 10 quartiers les moins peuplés ?
+Quels sont les quartiers les plus peuplés du Sénégal ?
+Quel quartier présente le plus grand nombre moyen de ménages par concession ?
+Quelle est la population projetée du département de Dakar en 2025 ?
+Quelle a été l'évolution de la population projetée du département de Dakar entre 2016 et 2025 ?
+Calcule l'évolution en pourcentage de la population projetée du département de Dakar entre 2016 et 2025.
+Quels départements avaient la population projetée la plus élevée en 2025 ?
+Où la population augmente-t-elle le plus selon les projections ?
+# B. Chômage et emploi
+Quel est le taux de chômage au Sénégal en 2023 ?
+Quel est le taux d'emploi de la région de Thiès en 2022 ?
+Comment le taux de chômage du Sénégal a-t-il évolué entre 2015 et 2025 ?
+De combien de points de pourcentage le taux de chômage a-t-il augmenté ou diminué entre 2019 et 2024 ?
+Quelle année présente le taux de chômage le plus élevé dans les données disponibles ?
+Quelle région présente le taux de chômage le plus élevé en 2023 ?
+Compare le taux de chômage de Dakar et de Thiès en 2023.
+Dans quelle région les gens sont-ils le plus au chômage ?
+Donne-moi les régions où trouver du travail semble le plus difficile, selon le taux de chômage.
+Quelle région présente le taux d'emploi le plus élevé en 2023 ?
+Résume-moi la situation de l'emploi au Sénégal en 2023.
+Quelle est la variation moyenne annuelle du taux de chômage entre 2015 et 2025 ?
+# C. Natalité
+Quel était le taux brut de natalité au Sénégal en 2020 ?
+Quelle est l'évolution relative du taux brut de natalité entre 2010 et 2020 ?
+Quelle année présente le taux brut de natalité le plus faible ?
+Compare le taux brut de natalité de Dakar et de Diourbel en 2020.
+# D. Hors catalogue : doit refuser proprement
+Quel était le taux brut de mortalité au Sénégal en 2023 ?
+Quel est l'indice de bien-être de la région de Dakar en 2023 ?
+Quel pourcentage de ménages utilise l'électricité comme source d'éclairage dans la région de Saint-Louis en 2023 ?
+Quel est le taux d'accès à une source d'eau améliorée dans la région de Kaolack en 2020 ?
+Quel est le taux de chômage de chaque quartier de Dakar en 2023 ?
+Combien de personnes ont accès à Internet dans chaque région en 2023 ?
+Quel est le revenu moyen des ménages de chaque quartier ?
+Quel est le taux de pauvreté de chaque département en 2023 ?
+Combien d'habitants compte chaque quartier en 2025 selon le RGPH-5 ?
+Quelle est la population exacte du Sénégal aujourd'hui ?
+Quel était le taux de chômage du Sénégal en 1990 ?
+Donne-moi le taux d'accès à l'électricité de la région de Dakar en 2010, même si cette valeur n'est pas disponible.
+Quel est le taux d'inflation dans chaque quartier de Dakar ?
+# E. Seuils et conditions
+Quels quartiers ont une taille moyenne des ménages supérieure à 8 personnes ?
+Quels quartiers comptent plus de 1 000 ménages ?
+Existe-t-il des quartiers qui comptent plus de ménages que de concessions ?
+Quelle région présente simultanément un taux d'emploi élevé et un taux de chômage faible en 2023 ?
+# F. Reste
+Quelle était la différence entre le taux d'emploi de 2020 et celui de 2025 ?
+Identifie les années où le taux d'emploi a augmenté par rapport à l'année précédente.
+Le taux de chômage a-t-il évolué dans le même sens dans toutes les régions entre 2020 et 2025 ?
+Quel est l'écart entre le département le plus peuplé et le moins peuplé selon les projections de 2025 ?
+Quelle est la dispersion des taux de chômage entre les régions en 2023 ?
+Calcule la moyenne du taux d'emploi pour les régions en 2023, en précisant la méthode utilisée.
+Calcule la différence entre le taux d'emploi et le taux de chômage du Sénégal en 2023.
+Classe les quartiers par nombre de concessions, du plus élevé au plus faible.
+Fais-moi un classement des régions selon leur accès à l'eau.
+Je veux savoir si Dakar est mieux lotie que les autres régions en matière d'électricité.
+Fais-moi un petit bilan de l'évolution du bien-être au Sénégal depuis 2000.
+Quel est le taux de réussite au baccalauréat dans chaque région en 2023 ?
+Combien de médecins y a-t-il pour 1 000 habitants dans chaque département ?
+D'où provient la statistique utilisée pour calculer la population recensée en 2023 ?
+Sur quelle période les données d'accès à l'eau sont-elles disponibles ?
+Combien d'observations sont disponibles pour la population projetée ?

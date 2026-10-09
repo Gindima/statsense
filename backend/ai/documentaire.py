@@ -55,6 +55,7 @@ MOTIFS = [
         "recensement et projection",
         "pourquoi deux populations",
         "pourquoi deux chiffres de population",
+        "donnees du rgph 5 et celles", "rgph 5 et le catalogue",
     )),
     ("recensement", (
         "quand a eu lieu le dernier recensement",
@@ -85,6 +86,8 @@ MOTIFS = [
         "d ou proviennent ces donnees",
         "quand les donnees ont elles ete publiees",
         "date de publication des donnees",
+        "d ou provient", "d ou proviennent", "source officielle",
+        "affiche les sources",
         "vos donnees sont elles fiables",
     )),
     ("definition", (
@@ -93,6 +96,8 @@ MOTIFS = [
         "que veut dire le taux de chomage",
         "comment est calcule le taux de chomage",
         "comment calculez vous",
+        "quelle formule", "comment as tu obtenu", "comment as tu calcule",
+        "etapes de calcul", "utilises dans ton calcul",
         "que signifie le rapport de masculinite",
     )),
     ("inventaire", (
@@ -101,6 +106,8 @@ MOTIFS = [
         "quelles sont les donnees disponibles",
         "que savez vous faire",
         "quels indicateurs sont disponibles",
+        "sur quelle periode les donnees", "sont elles disponibles",
+        "quel niveau geographique", "combien d observations",
     )),
 ]
 

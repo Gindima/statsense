@@ -193,14 +193,6 @@ def valider(brut):
     if plan["indicateur"] is None and not plan["clarification"]:
         plan["clarification"] = "Quel indicateur souhaitez-vous consulter ?"
 
-    # « Quelle part de la population… », « pourcentage », « proportion de
-    # femmes » : un pourcentage est demandé, pas un effectif.
-    MOTS_PART = ("quelle part", "part de la population", "la part de",
-                 "pourcentage", "proportion", "poids demographique")
-    if plan.get("indicateur") in ("pop_totale", "pop_region") \
-            and any(m in texte for m in MOTS_PART):
-        plan["indicateur"] = "part_population"
-
     return plan
 
 
@@ -330,18 +322,13 @@ RE_POP_SEXE = re.compile(
 # « Quelle région compte le plus d'hommes ? » demande un effectif.
 MOTS_RAPPORT = ("rapport", "ratio", "proportion", "equilibre",
                 "masculinite")
+# « en pourcentage » seul n'en est pas : c'est l'unité d'une variation.
+MOTS_PART = ("quelle part", "part de la population", "la part de",
+             "quel pourcentage", "pourcentage de la population",
+             "proportion", "poids demographique")
 
 def corriger_indicateur(plan, question):
-    """
-    Deux erreurs mesurées du modèle sur les questions de sexe :
-
-        « Combien de femmes vivent à Dakar ? »  -> pop_femmes (inventé)
-        « Combien d'hommes vivent à Dakar ? »   -> rapport_masculinite
-
-    La première produisait un refus injustifié, la seconde un ratio à qui
-    demandait un effectif. Une question qui nomme UN seul sexe sans parler
-    de rapport demande la population de ce sexe.
-    """
+    """Erreurs mesurées du modèle sur le sexe, les ratios et les parts."""
     from .filtres import filtres_cites
 
     code = plan.get("indicateur") or ""
@@ -349,8 +336,24 @@ def corriger_indicateur(plan, question):
     texte = _norm(question)
 
     if RE_POP_SEXE.match(code):
-        plan["indicateur"] = "pop_totale"
-    elif (code == "rapport_masculinite" and un_sexe
-          and not any(m in texte for m in MOTS_RAPPORT)):
-        plan["indicateur"] = "pop_totale"
+        code = plan["indicateur"] = "pop_totale"
+    elif code == "rapport_masculinite" and un_sexe and (
+            any(m in texte for m in MOTS_PART)
+            or not any(m in texte for m in MOTS_RAPPORT)):
+        code = plan["indicateur"] = "pop_totale"
+
+    # Ratios nommés par leurs composants. Constaté : « le rapport entre la
+    # population et le nombre de ménages » rendait un classement.
+    if "menage" in texte and "concession" in texte and any(
+            m in texte for m in ("par concession", "rapport", "ratio", "moyen")):
+        plan["indicateur"] = "menages_par_concession"
+    elif "menage" in texte and (
+            any(m in texte for m in ("taille moyenne", "par menage",
+                                     "par famille", "personnes par"))
+            or ("population" in texte
+                and any(m in texte for m in ("rapport", "ratio")))):
+        plan["indicateur"] = "taille_menage"
+    elif code in ("pop_totale", "pop_region") \
+            and any(m in texte for m in MOTS_PART):
+        plan["indicateur"] = "part_population"
     return plan

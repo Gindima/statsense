@@ -332,6 +332,8 @@ def valeur_simple(plan):
     if zone.niveau == Niveau.QUARTIER:
         notes.append(f"Localité recensée comme quartier, village ou "
                      f"hameau : {situer(zone)}.")
+    elif zone.niveau == Niveau.COMMUNE:
+        notes.append(f"Commune : {situer(zone)}.")
 
     # La note ne vaut que si la valeur a réellement été sommée : le total
     # national des projections est publié tel quel.
@@ -476,7 +478,10 @@ def evolution(plan):
     periodes = _intervalle(ind, plan)
 
     noms = plan.get("zones") or []
-    zone = zone_par_nom(noms[0]) if noms else \
+    niveau_zone = plan.get("niveau_zone")
+    if niveau_zone and noms:
+        verifier_granularite(ind, niveau_zone)
+    zone = zone_par_nom(noms[0], niveau=niveau_zone) if noms else \
         Zone.objects.filter(niveau=Niveau.NATIONAL).first()
     if zone is None:
         raise ErreurAnalyse("Aucune zone précisée.", motif="zone_manquante")
@@ -546,6 +551,16 @@ def evolution(plan):
                          f"l'intervalle ({_enumerer(trous)}) : la courbe "
                          f"relie directement les points voisins, et ces "
                          f"segments ne correspondent à aucune mesure.")
+
+    # Points extrêmes : répond à « quelle année… le plus élevé ».
+    if len(serie) >= 3:
+        haut = max(serie, key=lambda l: Decimal(l["valeur"]))
+        bas = min(serie, key=lambda l: Decimal(l["valeur"]))
+        d = 1 if _est_un_taux(ind.unite) else (0 if ind.agregeable else 2)
+        notes.append(f"Valeur la plus élevée : {_fr(haut['valeur'], d)} "
+                     f"{ind.unite} en {haut['periode']} ; la plus basse : "
+                     f"{_fr(bas['valeur'], d)} {ind.unite} en "
+                     f"{bas['periode']}.")
 
     # RÈGLE DE SAISONNALITÉ.
     # Sur une série trimestrielle, comparer un trimestre au précédent

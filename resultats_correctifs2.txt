@@ -1,0 +1,175 @@
+
+ 1. Quelle est la taille moyenne des ménages du quartier Castor ?   (54s, origine modele)
+    plan    : valeur_simple · taille_menage · niveau=quartier · niveau_zone=quartier · zones=Castor
+    obtenu  : 1 ligne(s), unité « personnes par ménage »
+              CASTOR 2023 = 5.97
+    note    : Localité recensée comme quartier, village ou hameau : CASTOR (ZIGUINCHOR, ZIGUINCHOR).
+
+ 2. Quel est le rapport entre la population recensée et le nombre de ménages dans le quartier Liberté I ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+ 3. Calcule le nombre moyen de ménages par concession au niveau national.   (42s, origine modele)
+    plan    : valeur_simple · menages_par_concession · niveau=national · zones=SENEGAL
+    obtenu  : 1 ligne(s), unité « ménages par concession »
+              SENEGAL 2023 = 1.45
+
+ 4. Quelle est la part de la population de Dakar dans la population totale recensée en 2023 ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+ 5. Quelle a été l'évolution de la population projetée du département de Dakar entre 2016 et 2025 ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+ 6. Dans quelle région les gens sont-ils le plus au chômage ?   (38s, origine modele)
+    plan    : classement · taux_chomage_a · niveau=region · zones=SENEGAL · dim=age · top5 desc
+    obtenu  : 5 ligne(s), unité « % »
+              MATAM = 48.0
+              KAOLACK = 37.2
+              SEDHIOU = 30.2
+              ZIGUINCHOR = 29.2
+              … et 1 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+ 7. Donne-moi les régions où trouver du travail semble le plus difficile, selon le taux de chômage.   (34s, origine modele)
+    plan    : classement · taux_chomage_a · niveau=region · top5 desc
+    obtenu  : 5 ligne(s), unité « % »
+              MATAM = 48.0
+              KAOLACK = 37.2
+              SEDHIOU = 30.2
+              ZIGUINCHOR = 29.2
+              … et 1 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+ 8. Quelle année présente le taux brut de natalité le plus faible ?   (28s, origine modele)
+    plan    : evolution · taux_natalite · niveau=region
+    obtenu  : 17 ligne(s), unité « ‰ »
+              1992 = 41.3
+              1997 = 39.3
+              2005 = 39.1
+              2006 = 37.1
+              … et 13 autre(s)
+    note    : Valeur la plus élevée : 41,3 ‰ en 1992 ; la plus basse : 28,7 ‰ en 2020.
+    note    : Série irrégulière : dix-sept points entre 1992 et 2025.
+
+ 9. Quelle année présente le taux de chômage le plus élevé dans les données disponibles ?   (34s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=national · zones=SENEGAL
+    obtenu  : 10 ligne(s), unité « % »
+              2015 = 14.5
+              2016 = 14.5
+              2017 = 15.9
+              2018 = 15.5
+              … et 6 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 23,6 % en 2021 ; la plus basse : 14,5 % en 2015.
+
+10. Quel est le taux de chômage de chaque quartier de Dakar en 2023 ?   (36s, origine modele)
+    plan    : classement · taux_chomage_a · niveau=region · niveau_zone=quartier · zones=DAKAR · periode=None→2023 · top10 desc
+    obtenu  : REFUS granularite_indisponible
+    message : « Taux de chômage (annuel, par région) » n'est disponible qu'au niveau region.
+
+11. Quels quartiers ont une taille moyenne des ménages supérieure à 8 personnes ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : La sélection des zones au-dessus ou en dessous d'une valeur (8) n'est pas proposée. Un classement range les zones dans l'ordre et permet de lire celles qui dépassent ce seuil.
+
+12. Où la population augmente-t-elle le plus selon les projections ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Classer les zones selon leur évolution (hausse ou baisse) n'est pas encore proposé. La plateforme classe des niveaux à une date, ou suit l'évolution d'une zone dans le temps.
+
+13. Classe les quartiers par nombre de concessions, du plus élevé au plus faible.   (35s, origine modele)
+    plan    : classement · concessions · niveau=quartier · top10 desc
+    obtenu  : 10 ligne(s), unité « concessions »
+              TOUBA MOSQUEE = 11687.0
+              DAROU KHOUDOSS = 10428.0
+              BOUKHATOUL MOUBARACK = 10181.0
+              GUEDE BOUSSO = 5714.0
+              … et 6 autre(s)
+
+14. Je veux savoir si Dakar est mieux lotie que les autres régions en matière d'électricité.   (41s, origine modele)
+    plan    : comparaison · acces_electricite · niveau=region · zones=DAKAR
+    obtenu  : REFUS donnee_absente
+    message : Pas assez de données pour comparer « Ménages ayant l'électricité comme source d'éclairage » en 2023 : aucune zone sans valeur.
+
+15. D'où provient la statistique utilisée pour calculer la population recensée en 2023 ?   (0s, origine documentaire)
+    plan    : —
+    obtenu  : CLARIFICATION 
+    message : Chaque chiffre rendu par la plateforme porte sa source, affichée sous le résultat. Les jeux chargés sont :
+
+· ANSD — Catalogue de données standardisé (SDMX) (Open Data for Africa / ANSD, extraction du
+
+16. Combien d'observations sont disponibles pour la population projetée ?   (0s, origine documentaire)
+    plan    : —
+    obtenu  : CLARIFICATION 
+    message : 16 indicateurs sont disponibles :
+
+· Accès à une source d'eau améliorée (%) — 2002–2023, niveau region
+· Ménages ayant l'électricité comme source d'éclairage (%) — 2016–2023, niveau region
+· Nombre de
+
+17. Combien de ménages compte le quartier Médina ?   (29s, origine modele)
+    plan    : valeur_simple · menages · niveau=quartier · zones=MEDINA
+    obtenu  : 1 ligne(s), unité « ménages »
+              MEDINA 2023 = 18235.0
+    note    : Commune : MEDINA (DAKAR).
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+18. Quelle est la population recensée au Sénégal en 2023 ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+19. Quels sont les 10 quartiers les moins peuplés ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+20. Quelle est la population projetée du département de Dakar en 2025 ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+21. Quelle région présente le taux de chômage le plus élevé en 2023 ?   (36s, origine modele)
+    plan    : classement · taux_chomage_a · niveau=region · periode=None→2023 · top5 desc
+    obtenu  : 5 ligne(s), unité « % »
+              MATAM = 58.7
+              KAOLACK = 55.9
+              SAINT-LOUIS = 36.0
+              KOLDA = 35.9
+              … et 1 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+22. Compare le taux de chômage de Dakar et de Thiès en 2023.   (28s, origine modele)
+    plan    : comparaison · taux_chomage_a · zones=DAKAR,THIES · periode=None→2023
+    obtenu  : 2 ligne(s), unité « % »
+              THIES 2023 = 23.5
+              DAKAR 2023 = 13.5
+    note    : Écart entre THIES et DAKAR : 10,0 points.
+
+23. Quelle région compte le moins d'habitants ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+24. Combien de femmes vivent à Dakar ?
+    EXCEPTION NameError : name 'MOTS_PART' is not defined
+
+25. Quelle est la proportion de femmes à Dakar ?   (43s, origine modele)
+    plan    : valeur_simple · part_population · niveau=commune · zones=DAKAR · filtres={'sexe': 'F'}
+    obtenu  : 1 ligne(s), unité « % »
+              DAKAR 2023 = 49.59
+    note    : Part du sexe demandé dans la population totale de la zone.
+
+26. Compare la population de Dakar et de Thiès.
+    EXCEPTION NameError : name 'texte' is not defined
+
+27. Combien de personnes de 60 ans et plus vivent au Sénégal ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+28. Comment le chômage à Dakar a-t-il évolué depuis 2015 ?   (46s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=region · zones=DAKAR · periode=2015→None
+    obtenu  : 10 ligne(s), unité « % »
+              2015 = 9.5
+              2016 = 9.5
+              2017 = 14.5
+              2018 = 11.6
+              … et 6 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 17,6 % en 2021 ; la plus basse : 9,5 % en 2015.
+
+29. Quelle est la population de Touba ?
+    EXCEPTION NameError : name 'texte' is not defined
+
+29 questions en 898s
+

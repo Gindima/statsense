@@ -21,6 +21,8 @@ const MOTIFS = {
   zone_inconnue: "Lieu non reconnu",
   zone_ambigue: "Plusieurs lieux portent ce nom",
   age_non_traite: "Groupe d'âge non traité",
+  analyse_non_traitee: "Analyse non proposée",
+
 };
 
 export default function Refus({ reponse, onSuggestion }) {

@@ -470,6 +470,16 @@ def zone_par_nom(nom, niveau=None):
     if not candidats:
         candidats = list(Zone.objects.filter(code=nom))
     if not candidats:
+        proches = [z for z in Zone.objects.filter(
+                       niveau__in=[Niveau.COMMUNE, Niveau.QUARTIER])
+                   if _n(z.nom).startswith(cible + " ")][:5]
+        if proches:
+            raise ErreurAnalyse(
+                f"Aucun lieu ne s'appelle exactement « {nom} ». Noms "
+                f"proches : {', '.join(situer(z) for z in proches)}. "
+                f"Reposez la question avec le nom complet.",
+                motif="zone_inconnue",
+            )
         raise ErreurAnalyse(
             f"« {nom} » ne figure pas parmi les régions, départements et "
             f"communes reconnus. Précisez la commune ou le département.",

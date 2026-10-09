@@ -1,0 +1,507 @@
+
+ 1. Quelle est la population recensée au Sénégal en 2023 ?   (24s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=national · zones=SENEGAL · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2023 = 18126342.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 2. Combien de personnes vivent à Dakar d'après le dernier recensement disponible ?   (24s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=departement · zones=DAKAR
+    obtenu  : 1 ligne(s), unité « personnes »
+              DAKAR 2023 = 4004425.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 3. Combien de ménages compte le quartier Médina ?   (24s, origine modele)
+    plan    : valeur_simple · menages · niveau=quartier · zones=MEDINA
+    obtenu  : 1 ligne(s), unité « ménages »
+              MEDINA 2023 = 18235.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 4. Combien de concessions compte le quartier Darou Salam ?   (30s, origine modele)
+    plan    : valeur_simple · concessions · niveau=quartier · zones=DAROU SALAM
+    obtenu  : 1 ligne(s), unité « concessions »
+              DAROU SALAM 2023 = 2336.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 5. Quelle est la taille moyenne des ménages du quartier Castor ?   (28s, origine modele)
+    plan    : valeur_simple · taille_menage · niveau=quartier · zones=SENEGAL
+    obtenu  : 1 ligne(s), unité « personnes par ménage »
+              SENEGAL 2023 = 8.8
+
+ 6. Quel est le rapport entre la population recensée et le nombre de ménages dans le quartier Liberté I ?   (31s, origine modele)
+    plan    : classement · pop_totale · niveau=quartier · zones=SENEGAL · top10 desc
+    obtenu  : 10 ligne(s), unité « personnes »
+              TOUBA MOSQUEE = 140609.0
+              DAROU KHOUDOSS = 129738.0
+              BOUKHATOUL MOUBARACK = 102150.0
+              MEDINA GOUNASS = 73371.0
+              … et 6 autre(s)
+
+ 7. Combien de concessions ont été recensées au Sénégal en 2023 ?   (26s, origine modele)
+    plan    : valeur_simple · concessions · niveau=region · zones=SENEGAL · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « concessions »
+              SENEGAL 2023 = 1417906.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+ 8. Calcule la taille moyenne des ménages au niveau national en 2023.   (25s, origine modele)
+    plan    : valeur_simple · taille_menage · niveau=national · zones=SENEGAL · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « personnes par ménage »
+              SENEGAL 2023 = 8.8
+
+ 9. Calcule le nombre moyen de ménages par concession au niveau national.   (31s, origine modele)
+    plan    : evolution · menages_par_concession · niveau=national · zones=SENEGAL
+    obtenu  : REFUS serie_trop_courte
+    message : « Ménages par concession » ne comporte pas assez de points pour SENEGAL : une évolution demande au moins deux périodes.
+
+10. Calcule le rapport de masculinité national à partir des données disponibles.   (24s, origine modele)
+    plan    : valeur_simple · rapport_masculinite · niveau=national · zones=SENEGAL
+    obtenu  : 1 ligne(s), unité « hommes pour 100 femmes »
+              SENEGAL 2023 = 102.59
+
+11. Quelle est la part de la population de Dakar dans la population totale recensée en 2023 ?   (55s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=commune · zones=DAKAR · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « personnes »
+              DAKAR 2023 = 4004425.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+12. Quels sont les 10 quartiers les plus peuplés ?   (51s, origine modele)
+    plan    : classement · pop_totale · niveau=quartier · top10 desc
+    obtenu  : 10 ligne(s), unité « personnes »
+              TOUBA MOSQUEE = 140609.0
+              DAROU KHOUDOSS = 129738.0
+              BOUKHATOUL MOUBARACK = 102150.0
+              MEDINA GOUNASS = 73371.0
+              … et 6 autre(s)
+
+13. Quels sont les 10 quartiers les moins peuplés ?   (23s, origine modele)
+    plan    : classement · pop_totale · niveau=quartier · top10 asc
+    obtenu  : 10 ligne(s), unité « personnes »
+              H1 MOUYI KASSE = 1.0
+              H1 NDANGANE = 1.0
+              H1 NEMA SALOUM = 1.0
+              H2 BANDIOU = 1.0
+              … et 6 autre(s)
+
+14. Quels sont les quartiers les plus peuplés du Sénégal ?   (17s, origine modele)
+    plan    : classement · pop_totale · niveau=quartier · zones=SENEGAL · top10 desc
+    obtenu  : 10 ligne(s), unité « personnes »
+              TOUBA MOSQUEE = 140609.0
+              DAROU KHOUDOSS = 129738.0
+              BOUKHATOUL MOUBARACK = 102150.0
+              MEDINA GOUNASS = 73371.0
+              … et 6 autre(s)
+
+15. Quel quartier présente le plus grand nombre moyen de ménages par concession ?   (28s, origine modele)
+    plan    : classement · menages_par_concession · niveau=quartier · top5 desc
+    obtenu  : 5 ligne(s), unité « ménages par concession »
+              H2 THIEWELI = 23.0
+              H5 BAMBADALA = 18.0
+              H7 USINE KIRENE = 18.0
+              H1 TITINE = 17.0
+              … et 1 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+16. Quelle est la population projetée du département de Dakar en 2025 ?   (32s, origine modele)
+    plan    : valeur_simple · pop_region · niveau=departement · niveau_zone=departement · zones=DAKAR · periode=2025→2025 · dim=age
+    obtenu  : 1 ligne(s), unité « personnes »
+              DAKAR 2025 = 1327422.0
+
+17. Quelle a été l'évolution de la population projetée du département de Dakar entre 2016 et 2025 ?   (32s, origine modele)
+    plan    : evolution · pop_region · niveau=departement · niveau_zone=departement · zones=DAKAR · periode=2016→2025 · dim=age
+    obtenu  : 10 ligne(s), unité « personnes »
+              2016 = 3372557.0
+              2017 = 3454871.0
+              2018 = 3539195.0
+              2019 = 3625576.0
+              … et 6 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (departement).
+
+18. Calcule l'évolution en pourcentage de la population projetée du département de Dakar entre 2016 et 2025.   (27s, origine modele)
+    plan    : evolution · pop_region · niveau=departement · niveau_zone=departement · zones=DAKAR · periode=2016→2025 · dim=age
+    obtenu  : 10 ligne(s), unité « personnes »
+              2016 = 3372557.0
+              2017 = 3454871.0
+              2018 = 3539195.0
+              2019 = 3625576.0
+              … et 6 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (departement).
+
+19. Quels départements avaient la population projetée la plus élevée en 2025 ?   (34s, origine modele)
+    plan    : classement · pop_region · niveau=departement · periode=None→2025 · top10 desc
+    obtenu  : 10 ligne(s), unité « personnes »
+              MBACKE = 1443387.0
+              DAKAR = 1327422.0
+              MBOUR = 990570.0
+              THIES = 910266.0
+              … et 6 autre(s)
+
+20. Où la population augmente-t-elle le plus selon les projections ?   (33s, origine modele)
+    plan    : evolution · pop_region · niveau=region · zones=SENEGAL · dim=age
+    obtenu  : 10 ligne(s), unité « personnes »
+              2016 = 14728452.0
+              2017 = 15160233.0
+              2018 = 15605289.0
+              2019 = 16064046.0
+              … et 6 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (departement).
+
+21. Quel est le taux de chômage au Sénégal en 2023 ?   (22s, origine modele)
+    plan    : valeur_simple · taux_chomage_a · niveau=national · zones=SENEGAL · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « % »
+              SENEGAL 2023 = 21.4
+
+22. Quel est le taux d'emploi de la région de Thiès en 2022 ?   (27s, origine modele)
+    plan    : valeur_simple · taux_emploi · niveau=region · niveau_zone=region · zones=THIES · periode=2022→2022
+    obtenu  : 1 ligne(s), unité « % »
+              THIES 2022 = 47.1
+
+23. Comment le taux de chômage du Sénégal a-t-il évolué entre 2015 et 2025 ?   (19s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=national · zones=SENEGAL · periode=2015→2025
+    obtenu  : 10 ligne(s), unité « % »
+              2015 = 14.5
+              2016 = 14.5
+              2017 = 15.9
+              2018 = 15.5
+              … et 6 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+
+24. De combien de points de pourcentage le taux de chômage a-t-il augmenté ou diminué entre 2019 et 2024 ?   (14s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=region · zones=SENEGAL · periode=2019→2024
+    obtenu  : 5 ligne(s), unité « % »
+              2019 = 16.3
+              2021 = 23.6
+              2022 = 23.1
+              2023 = 21.4
+              … et 1 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+
+25. Quelle année présente le taux de chômage le plus élevé dans les données disponibles ?   (18s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=national · zones=SENEGAL
+    obtenu  : 10 ligne(s), unité « % »
+              2015 = 14.5
+              2016 = 14.5
+              2017 = 15.9
+              2018 = 15.5
+              … et 6 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+
+26. Quelle région présente le taux de chômage le plus élevé en 2023 ?   (44s, origine modele)
+    plan    : classement · taux_chomage_a · niveau=region · periode=None→2023 · top5 desc
+    obtenu  : 5 ligne(s), unité « % »
+              MATAM = 58.7
+              KAOLACK = 55.9
+              SAINT-LOUIS = 36.0
+              KOLDA = 35.9
+              … et 1 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+27. Compare le taux de chômage de Dakar et de Thiès en 2023.   (29s, origine modele)
+    plan    : comparaison · taux_chomage_a · zones=DAKAR,THIES · periode=None→2023
+    obtenu  : 2 ligne(s), unité « % »
+              THIES 2023 = 23.5
+              DAKAR 2023 = 13.5
+    note    : Écart entre THIES et DAKAR : 10,0 points.
+
+28. Dans quelle région les gens sont-ils le plus au chômage ?   (25s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=region · zones=SENEGAL
+    obtenu  : 10 ligne(s), unité « % »
+              2015 = 14.5
+              2016 = 14.5
+              2017 = 15.9
+              2018 = 15.5
+              … et 6 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+
+29. Donne-moi les régions où trouver du travail semble le plus difficile, selon le taux de chômage.   (35s, origine modele)
+    plan    : classement · taux_chomage_a · niveau=region · top5 asc
+    obtenu  : 5 ligne(s), unité « % »
+              TAMBACOUNDA = 5.0
+              KEDOUGOU = 8.8
+              DAKAR = 13.2
+              DIOURBEL = 14.2
+              … et 1 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+30. Quelle région présente le taux d'emploi le plus élevé en 2023 ?   (28s, origine modele)
+    plan    : classement · taux_emploi · niveau=region · periode=None→2023 · top5 desc
+    obtenu  : 5 ligne(s), unité « % »
+              KAFFRINE = 57.9
+              DAKAR = 52.6
+              LOUGA = 49.7
+              THIES = 47.4
+              … et 1 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+31. Résume-moi la situation de l'emploi au Sénégal en 2023.   (27s, origine modele)
+    plan    : evolution · repartition_emploi · niveau=national · zones=SENEGAL · periode=None→2023
+    obtenu  : REFUS serie_trop_courte
+    message : « Répartition de l'emploi par secteur et catégorie » ne comporte pas assez de points pour SENEGAL : une évolution demande au moins deux périodes.
+
+32. Quelle est la variation moyenne annuelle du taux de chômage entre 2015 et 2025 ?   (31s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=region · zones=SENEGAL · periode=2015→2025
+    obtenu  : 10 ligne(s), unité « % »
+              2015 = 14.5
+              2016 = 14.5
+              2017 = 15.9
+              2018 = 15.5
+              … et 6 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+
+33. Quel était le taux brut de natalité au Sénégal en 2020 ?   (31s, origine modele)
+    plan    : valeur_simple · taux_natalite · niveau=national · zones=SENEGAL · periode=2020→2020
+    obtenu  : 1 ligne(s), unité « ‰ »
+              SENEGAL 2020 = 28.7
+    note    : Série irrégulière : dix-sept points entre 1992 et 2025.
+
+34. Quelle est l'évolution relative du taux brut de natalité entre 2010 et 2020 ?   (20s, origine modele)
+    plan    : evolution · taux_natalite · niveau=region · zones=SENEGAL · periode=2010→2020
+    obtenu  : 9 ligne(s), unité « ‰ »
+              2010 = 37.4
+              2012 = 38.6
+              2014 = 37.6
+              2015 = 35.7
+              … et 5 autre(s)
+    note    : Aucune donnée pour 2 périodes de l'intervalle (2011, 2013) : la courbe relie directement les points voisins, et ces segments ne correspondent à aucune mesure.
+    note    : Série irrégulière : dix-sept points entre 1992 et 2025.
+
+35. Quelle année présente le taux brut de natalité le plus faible ?   (15s, origine modele)
+    plan    : classement · taux_natalite · niveau=region · top10 asc
+    obtenu  : 10 ligne(s), unité « ‰ »
+              DAKAR = 23.4
+              ZIGUINCHOR = 27.0
+              THIES = 29.5
+              SAINT-LOUIS = 29.6
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+    note    : Série irrégulière : dix-sept points entre 1992 et 2025.
+
+36. Compare le taux brut de natalité de Dakar et de Diourbel en 2020.   (32s, origine modele)
+    plan    : comparaison · taux_natalite · zones=DAKAR,DIOURBEL · periode=None→2020
+    obtenu  : REFUS donnee_absente
+    message : Pas assez de données pour comparer « Taux brut de natalité » en 2020 : DAKAR, DIOURBEL sans valeur.
+
+37. Quel était le taux brut de mortalité au Sénégal en 2023 ?   (25s, origine modele)
+    plan    : valeur_simple · taux_mortalite · niveau=national · zones=SENEGAL · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « ‰ »
+              SENEGAL 2023 = 5.6
+
+38. Quel est l'indice de bien-être de la région de Dakar en 2023 ?   (39s, origine modele)
+    plan    : valeur_simple · indice_bienetre · niveau=region · niveau_zone=region · zones=DAKAR · periode=2023→2023
+    obtenu  : REFUS donnee_absente
+    message : Pas de donnée pour « Indice de bien-être » à DAKAR en 2023.
+
+39. Quel pourcentage de ménages utilise l'électricité comme source d'éclairage dans la région de Saint-Louis en 2023 ?   (39s, origine modele)
+    plan    : valeur_simple · acces_electricite · niveau=region · niveau_zone=region · zones=SAINT-LOUIS · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « % »
+              SAINT-LOUIS 2023 = 64.9
+
+40. Quel est le taux d'accès à une source d'eau améliorée dans la région de Kaolack en 2020 ?   (31s, origine modele)
+    plan    : valeur_simple · acces_eau · niveau=region · niveau_zone=region · zones=KAOLACK · periode=2020→2020
+    obtenu  : REFUS donnee_absente
+    message : Pas de donnée pour « Accès à une source d'eau améliorée » à KAOLACK en 2020.
+
+41. Quel est le taux de chômage de chaque quartier de Dakar en 2023 ?   (44s, origine modele)
+    plan    : classement · taux_chomage_a · niveau=region · niveau_zone=quartier · zones=DAKAR · periode=None→2023 · top10 desc
+    obtenu  : 10 ligne(s), unité « % »
+              MATAM = 58.7
+              KAOLACK = 55.9
+              SAINT-LOUIS = 36.0
+              KOLDA = 35.9
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+42. Combien de personnes ont accès à Internet dans chaque région en 2023 ?   (38s, origine modele)
+    plan    : repartition · acces_internet_reg · niveau=region · zones=Internet · periode=None→2023 · dim=reg
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « acces_internet_reg » ne figure pas dans le catalogue.
+
+43. Quel est le revenu moyen des ménages de chaque quartier ?   (37s, origine modele)
+    plan    : classement · revenu_menage · niveau=quartier · zones=SENEGAL · top10 desc
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « revenu_menage » ne figure pas dans le catalogue.
+
+44. Quel est le taux de pauvreté de chaque département en 2023 ?   (40s, origine modele)
+    plan    : classement · taux_pauvrete · niveau=departement · zones=SENEGAL · periode=None→2023 · top10 desc
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « taux_pauvrete » ne figure pas dans le catalogue.
+
+45. Combien d'habitants compte chaque quartier en 2025 selon le RGPH-5 ?   (48s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=quartier · zones=SENEGAL · periode=2025→2025
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2025 = 19075959.0
+    note    : Série relayée. « Population recensée (RGPH-5, 2023) » n'est pas disponible pour 2025. Période couverte : 2023 à 2023. Le résultat ci-dessus provient de « Popula
+
+46. Quelle est la population exacte du Sénégal aujourd'hui ?   (25s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=national · zones=SENEGAL
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2023 = 18126342.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+47. Quel était le taux de chômage du Sénégal en 1990 ?   (30s, origine modele)
+    plan    : valeur_simple · taux_chomage_a · niveau=region · zones=SENEGAL · periode=1990→1990
+    obtenu  : REFUS periode_non_couverte
+    message : « Taux de chômage (annuel, par région) » n'est pas disponible pour 1990. Période couverte : 2015 à 2025.
+
+48. Donne-moi le taux d'accès à l'électricité de la région de Dakar en 2010, même si cette valeur n'est pas disponible.   (29s, origine modele)
+    plan    : valeur_simple · acces_electricite · niveau=region · niveau_zone=region · zones=DAKAR · periode=2010→2010
+    obtenu  : REFUS periode_non_couverte
+    message : « Ménages ayant l'électricité comme source d'éclairage » n'est pas disponible pour 2010. Période couverte : 2016 à 2023.
+
+49. Quel est le taux d'inflation dans chaque quartier de Dakar ?   (26s, origine modele)
+    plan    : classement · taux_inflation · niveau=quartier · niveau_zone=quartier · zones=DAKAR · top10 desc
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « taux_inflation » ne figure pas dans le catalogue.
+
+50. Quels quartiers ont une taille moyenne des ménages supérieure à 8 personnes ?   (35s, origine modele)
+    plan    : classement · taille_menage · niveau=quartier · top8 desc
+    obtenu  : 8 ligne(s), unité « personnes par ménage »
+              ALPOULAR II = 688.0
+              H1 NDIAMA (UMULKURA) = 463.0
+              H2 DAROU MIRAYA = 323.0
+              KHELCOM = 203.78
+              … et 4 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+51. Quels quartiers comptent plus de 1 000 ménages ?   (25s, origine modele)
+    plan    : classement · menages_quartier · niveau=quartier · top1000 desc
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « menages_quartier » ne figure pas dans le catalogue.
+
+52. Existe-t-il des quartiers qui comptent plus de ménages que de concessions ?   (34s, origine modele)
+    plan    : classement · menages_par_concession · niveau=quartier · zones=SENEGAL · top10 desc
+    obtenu  : 10 ligne(s), unité « ménages par concession »
+              H2 THIEWELI = 23.0
+              H5 BAMBADALA = 18.0
+              H7 USINE KIRENE = 18.0
+              H1 TITINE = 17.0
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+53. Quelle région présente simultanément un taux d'emploi élevé et un taux de chômage faible en 2023 ?   (40s, origine modele)
+    plan    : repartition · taux_chomage_a · niveau=region · zones=SENEGAL · periode=None→2023 · dim=age
+    obtenu  : REFUS non_agregeable
+    message : « Taux de chômage (annuel, par région) » est un % : une répartition supposerait d'additionner ses valeurs entre catégories, ce qui n'aurait pas de sens.
+
+54. Quelle était la différence entre le taux d'emploi de 2020 et celui de 2025 ?   (17s, origine modele)
+    plan    : evolution · taux_emploi · niveau=region · zones=SENEGAL · periode=2020→2025
+    obtenu  : 5 ligne(s), unité « % »
+              2021 = 43.2
+              2022 = 41.8
+              2023 = 42.4
+              2024 = 39.9
+              … et 1 autre(s)
+    note    : Période demandée à partir de 2020 ; la série commence en 2021.
+
+55. Identifie les années où le taux d'emploi a augmenté par rapport à l'année précédente.   (16s, origine modele)
+    plan    : evolution · taux_emploi · niveau=region · zones=SENEGAL
+    obtenu  : 10 ligne(s), unité « % »
+              2015 = 41.2
+              2016 = 41.2
+              2017 = 43.0
+              2018 = 44.8
+              … et 6 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+
+56. Le taux de chômage a-t-il évolué dans le même sens dans toutes les régions entre 2020 et 2025 ?   (19s, origine modele)
+    plan    : evolution · taux_chomage_a · niveau=region · zones=SENEGAL · periode=2020→2025
+    obtenu  : 5 ligne(s), unité « % »
+              2021 = 23.6
+              2022 = 23.1
+              2023 = 21.4
+              2024 = 21.6
+              … et 1 autre(s)
+    note    : Période demandée à partir de 2020 ; la série commence en 2021.
+
+57. Quel est l'écart entre le département le plus peuplé et le moins peuplé selon les projections de 2025 ?   (32s, origine modele)
+    plan    : evolution · pop_region · niveau=region · zones=SENEGAL · periode=None→2025 · dim=age
+    obtenu  : 10 ligne(s), unité « personnes »
+              2016 = 14728452.0
+              2017 = 15160233.0
+              2018 = 15605289.0
+              2019 = 16064046.0
+              … et 6 autre(s)
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (departement).
+
+58. Quelle est la dispersion des taux de chômage entre les régions en 2023 ?   (33s, origine modele)
+    plan    : repartition · taux_chomage_a · niveau=region · zones=SENEGAL · periode=None→2023 · dim=age
+    obtenu  : REFUS non_agregeable
+    message : « Taux de chômage (annuel, par région) » est un % : une répartition supposerait d'additionner ses valeurs entre catégories, ce qui n'aurait pas de sens.
+
+59. Calcule la moyenne du taux d'emploi pour les régions en 2023, en précisant la méthode utilisée.   (28s, origine modele)
+    plan    : valeur_simple · taux_emploi · niveau=region · zones=SENEGAL · periode=2023→2023
+    obtenu  : 1 ligne(s), unité « % »
+              SENEGAL 2023 = 42.4
+
+60. Calcule la différence entre le taux d'emploi et le taux de chômage du Sénégal en 2023.   (40s, origine modele)
+    plan    : evolution · taux_emploi · niveau=national · zones=SENEGAL · periode=None→2023
+    obtenu  : 8 ligne(s), unité « % »
+              2015 = 41.2
+              2016 = 41.2
+              2017 = 43.0
+              2018 = 44.8
+              … et 4 autre(s)
+    note    : Aucune donnée pour 2020 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+
+61. Classe les quartiers par nombre de concessions, du plus élevé au plus faible.   (36s, origine modele)
+    plan    : classement · concessions · niveau=quartier · top10 asc
+    obtenu  : 10 ligne(s), unité « concessions »
+              ABISSAMROUNA = 1.0
+              ALACOUNDA = 1.0
+              ALI NDIAYE = 1.0
+              BADEME OUOLOF = 1.0
+              … et 6 autre(s)
+
+62. Fais-moi un classement des régions selon leur accès à l'eau.   (33s, origine modele)
+    plan    : classement · acces_eau · niveau=region · top10 desc
+    obtenu  : 10 ligne(s), unité « % »
+              LOUGA = 98.6
+              KAFFRINE = 95.3
+              MATAM = 94.1
+              THIES = 91.3
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+
+63. Je veux savoir si Dakar est mieux lotie que les autres régions en matière d'électricité.   (39s, origine modele)
+    plan    : valeur_simple · acces_electricite · niveau=region · zones=DAKAR
+    obtenu  : 1 ligne(s), unité « % »
+              DAKAR 2023 = 98.2
+
+64. Fais-moi un petit bilan de l'évolution du bien-être au Sénégal depuis 2000.   (27s, origine modele)
+    plan    : evolution · indice_bienetre · niveau=region · zones=SENEGAL · periode=2000→None
+    obtenu  : REFUS serie_trop_courte
+    message : « Indice de bien-être » ne comporte pas assez de points pour SENEGAL : une évolution demande au moins deux périodes.
+
+65. Quel est le taux de réussite au baccalauréat dans chaque région en 2023 ?   (25s, origine modele)
+    plan    : classement · taux_reussite_bac · niveau=region · zones=SENEGAL · periode=None→2023 · top10 desc
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « taux_reussite_bac » ne figure pas dans le catalogue.
+
+66. Combien de médecins y a-t-il pour 1 000 habitants dans chaque département ?   (24s, origine modele)
+    plan    : valeur_simple · nb_medecins_par_1000_habitants · niveau=departement · zones=SENEGAL
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « nb_medecins_par_1000_habitants » ne figure pas dans le catalogue.
+
+67. D'où provient la statistique utilisée pour calculer la population recensée en 2023 ?   (30s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=quartier · periode=None→2023
+    obtenu  : REFUS zone_manquante
+    message : Aucune zone précisée.
+
+68. Sur quelle période les données d'accès à l'eau sont-elles disponibles ?   (24s, origine modele)
+    plan    : geographique · acces_eau · niveau=region
+    obtenu  : 14 ligne(s), unité « % »
+              LOUGA = 98.6
+              KAFFRINE = 95.3
+              MATAM = 94.1
+              THIES = 91.3
+              … et 10 autre(s)
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+
+69. Combien d'observations sont disponibles pour la population projetée ?   (26s, origine modele)
+    plan    : valeur_simple · pop_totale · niveau=national · zones=SENEGAL
+    obtenu  : 1 ligne(s), unité « personnes »
+              SENEGAL 2023 = 18126342.0
+    note    : Valeur obtenue par agrégation des niveaux inférieurs (quartier).
+
+69 questions en 2050s
+

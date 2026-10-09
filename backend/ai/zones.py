@@ -209,20 +209,30 @@ def lieu_inconnu(question):
     return None
 
 
+# « le quartier Castor », « le village de Ndiayène » : un lieu annoncé
+# par son type est désigné, même hors de l'index des communes.
+RE_QUARTIER_NOMME = re.compile(
+    r"\b(?:quartier|village|hameau|localité|localite)s?\s+(?:de\s+|d['’]\s*)?"
+    r"([A-ZÀ-Ý][\w'’-]*(?:\s+[A-ZÀ-Ý0-9][\w'’-]*)*)")
+
+
 def corriger_zones(plan, question):
     """
     Remplace les zones du plan par celles réellement citées.
-
-    Ordre : régions et départements, puis communes, puis lieu inconnu.
-    Le pays entier n'est retenu que si la question ne nomme AUCUN lieu :
-    « population de Touba » ne doit jamais rendre la population du
-    Sénégal.
+    Ordre : régions et départements, communes, quartier annoncé, lieu
+    inconnu. Le pays entier seulement si AUCUN lieu n'est nommé.
     """
     citees = zones_citees(question)
     if citees in ([], ["SENEGAL"]):
         communes = communes_citees(question)
         if communes:
             citees = communes
+        else:
+            m = RE_QUARTIER_NOMME.search(str(question or ""))
+            if m:
+                plan["zones"] = [m.group(1).strip()]
+                plan["niveau_zone"] = "quartier"
+                return plan
 
     if citees:
         plan["zones"] = citees
@@ -230,15 +240,12 @@ def corriger_zones(plan, question):
 
     inconnu = lieu_inconnu(question)
     if inconnu:
-        # Transmis tel quel : le moteur ne le trouvera pas et refusera
-        # (zone_inconnue), au lieu de répondre pour le pays entier.
         plan["zones"] = [inconnu]
     elif plan.get("methode") in ("valeur_simple", "evolution", "repartition"):
         plan["zones"] = ["SENEGAL"]
     else:
         plan["zones"] = []
     return plan
-
 
 RE_NIVEAU_DE = re.compile(
     r"\b(REGION|DEPARTEMENT|COMMUNE|QUARTIER|VILLAGE)S?\s+"

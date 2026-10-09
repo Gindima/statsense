@@ -116,8 +116,8 @@ from .prompts import (
     prompt_extraction,
 )
 from .recherche import fiches, rechercher, zones_connues
-
-from .cadrage import corriger_cadrage, corriger_comparaison, deux_sexes
+from .cadrage import (corriger_cadrage, corriger_comparaison, deux_sexes,
+                      maille_demandee, seuil_cite, classement_evolution)
 from .zones import corriger_zones, niveau_de_zone
 
 
@@ -306,6 +306,21 @@ def repondre(question):
     if doc:
         return _documentaire(doc, debut)
 
+    # 0 bis. Analyses non proposées : refus immédiat, sans appel au modèle.
+    seuil = seuil_cite(question)
+    if seuil:
+        return _refus(
+            f"La sélection des zones au-dessus ou en dessous d'une valeur "
+            f"({seuil}) n'est pas proposée. Un classement range les zones "
+            f"dans l'ordre et permet de lire celles qui dépassent ce seuil.",
+            "analyse_non_traitee")
+    if classement_evolution(question):
+        return _refus(
+            "Classer les zones selon leur évolution (hausse ou baisse) n'est "
+            "pas encore proposé. La plateforme classe des niveaux à une date, "
+            "ou suit l'évolution d'une zone dans le temps.",
+            "analyse_non_traitee")
+
     # 1. Présélection du catalogue : le modèle choisira dans cette liste.
     candidats = rechercher(question)
     if not candidats:
@@ -325,7 +340,8 @@ def repondre(question):
     #    écrit en requalifiant une répartition en classement.
     plan = corriger_zones(plan, question)
     plan["niveau_zone"] = (niveau_de_zone(question, plan["zones"][0])
-                           if plan.get("zones") else None)
+                           if plan.get("zones") else None) \
+        or plan.get("niveau_zone")
     plan = corriger_indicateur(plan, question)
     plan = corriger_filtres(plan, question)
     plan = corriger_periode(plan, question)
@@ -432,6 +448,33 @@ def repondre(question):
                           "au Sénégal ?",
                           "Quelle est la répartition de la population par "
                           "tranche d'âge ?"],
+            plan=plan, meta=meta_plan,
+        )
+
+    # Maille demandée plus fine que la publication. Constaté : « le
+    # chômage de chaque quartier de Dakar » rendait les 14 régions.
+    maille = maille_demandee(question)
+    if maille:
+        from analytics.donnees import get_indicateur, verifier_granularite
+        try:
+            verifier_granularite(get_indicateur(plan["indicateur"]), maille)
+        except ErreurAnalyse as e:
+            return _refus(e.message, e.motif, e.alternatives, plan, meta_plan)
+
+    # Le RGPH-5 n'a qu'un millésime. Une autre année demandée « selon le
+    # recensement » ne doit pas être servie en silence par les projections.
+    texte_rgph = _norm_age(question)
+    p = plan.get("periode") or {}
+    annees = {str(v) for v in (p.get("debut"), p.get("fin")) if v}
+    if ("rgph" in texte_rgph or "recens" in texte_rgph) \
+            and annees and annees != {"2023"}:
+        autres = ", ".join(sorted(annees - {"2023"}))
+        return _refus(
+            f"Le RGPH-5 porte sur l'année 2023 : il n'existe pas de population "
+            f"recensée pour {autres}. Pour une autre année, les projections de "
+            f"population couvrent 2016-2025, jusqu'au niveau du département.",
+            "periode_non_couverte",
+            alternatives=["Quelle est la population recensée au Sénégal en 2023 ?"],
             plan=plan, meta=meta_plan,
         )
 

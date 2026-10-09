@@ -158,7 +158,7 @@ MOTS_METHODE = [
      "repartition"),
 
     (("evolu", "progress", "tendance", "depuis", "au fil", "croissance",
-      "augment", "diminu", "varia", "entre 19", "entre 20", "trajectoire",
+      "augment", "diminu", "hausse", "baisse", "varia", "entre 19", "entre 20", "trajectoire",
       "historique"),
      "evolution"),
 
@@ -263,24 +263,29 @@ def methode_citee(question):
     return None
 
 
-def ordre_cite(question):
-    """
-    Sens du tri demandé : « desc », « asc », ou None si la question ne le
-    dit pas.
+# « du plus élevé au plus faible » : le premier terme donne le sens.
+RE_DU_AU = re.compile(r"\bdu (.+?) au ")
 
-    Les formes croissantes sont cherchées d'abord, parce qu'elles sont les
-    plus spécifiques : « les plus petites régions » contient « les plus »,
-    et ce n'est pas un tri décroissant.
-    """
-    texte = f" {_norm(question)} "
 
-    for m in MOTS_ASC:
+def _sens(texte):
+    for m in MOTS_ASC + ("croissant",):
         if f" {m}" in texte:
             return "asc"
-    for m in MOTS_DESC:
+    for m in MOTS_DESC + ("le plus", "la plus", "decroissant"):
         if f" {m}" in texte:
             return "desc"
     return None
+
+
+def ordre_cite(question):
+    """Sens du tri demandé : « desc », « asc », ou None."""
+    texte = f" {_norm(question)} "
+    m = RE_DU_AU.search(texte)
+    if m:
+        sens = _sens(f" {m.group(1)} ")
+        if sens:
+            return sens
+    return _sens(texte)
 
 
 def nombre_cite(question):
@@ -335,17 +340,24 @@ NIVEAU_DU_NOM = {"village": "quartier", "ville": "commune",
                  "zone": "region"}
 
 
+# « le département le plus peuplé », « que les autres régions »
+RE_SUPERLATIF_NIVEAU = re.compile(
+    rf"\b(?:le|la)\s+({_NOMS})\s+(?:le|la)\s+(?:plus|moins)\b")
+RE_AUTRES_ZONES = re.compile(
+    r"\bautres\s+(region|departement|commune|quartier)s?\b")
+
+
 def classement_demande(question):
     """Niveau du classement que la question demande, ou None."""
     texte = _norm(question)
     m = RE_QUEL_ZONE.search(texte)
     if m and ordre_cite(question):
         return NIVEAU_DU_NOM.get(m.group(1), m.group(1))
-    m = RE_ZONES_LISTEES.search(texte)
-    if m:
-        return m.group(1)
+    for rx in (RE_SUPERLATIF_NIVEAU, RE_AUTRES_ZONES, RE_ZONES_LISTEES):
+        m = rx.search(texte)
+        if m:
+            return NIVEAU_DU_NOM.get(m.group(1), m.group(1))
     return None
-
 
 def deux_sexes(question):
     """La question nomme-t-elle les hommes ET les femmes ?"""
@@ -387,6 +399,51 @@ def corriger_comparaison(plan, question):
                            if k != "sexe"}
     return plan
 
+RE_QUELLE_ANNEE = re.compile(r"\bquelles? annees?\b|\bannees? ou\b")
+RE_DUREE = re.compile(r"\b(annees|serie|courbe|historique|periode)\b")
+
+# « chaque quartier », « quels départements » : la maille demandée.
+RE_MAILLE = re.compile(
+    r"\b(?:chaque|par|les|des|aux|tous les|toutes les|quels?|quelles?)\s+"
+    r"(region|departement|commune|quartier|village|localite)s?\b")
+
+# « supérieure à 8 », « plus de 1 000 » — mais pas « plus de 60 ans ».
+RE_SEUIL = re.compile(
+    r"\b(?:superieure?s? a|inferieure?s? a|au dessus de|en dessous de|"
+    r"au dela de|depassant|plus de|moins de)\s+(\d+(?: \d{3})*)")
+
+
+def _intervalle(plan):
+    p = plan.get("periode") or {}
+    d, f = p.get("debut"), p.get("fin")
+    return bool(d and f and str(d) != str(f))
+
+
+def maille_demandee(question):
+    m = RE_MAILLE.search(_norm(question))
+    return NIVEAU_DU_NOM.get(m.group(1), m.group(1)) if m else None
+
+
+def seuil_cite(question):
+    texte = _norm(question)
+    for m in RE_SEUIL.finditer(texte):
+        if re.match(r"\s*ans\b", texte[m.end():]):
+            continue
+        return m.group(1)
+    return None
+
+
+def classement_evolution(question):
+    """« Quelle région a connu la plus forte hausse ? » : un classement
+    de variations, que le moteur ne sait pas faire."""
+    texte = _norm(question)
+    if methode_citee(question) != "evolution":
+        return False
+    if not re.search(r"\b(le|la|les) (plus|moins)\b", texte):
+        return False
+    return bool(classement_demande(question)
+                or re.match(r"(ou|dans quelle|quelle|quel)\b", texte))
+
 def corriger_cadrage(plan, question):
     """
     Aligne la méthode, le sens du tri, le nombre d'éléments et la
@@ -414,7 +471,26 @@ def corriger_cadrage(plan, question):
     # Une valeur simple qui demandait en fait un classement. Mesuré :
     # « Quelle région compte le moins d'habitants ? » -> SENEGAL 18 126 342.
     niveau_classe = classement_demande(question)
-    if plan.get("methode") == "valeur_simple" and niveau_classe:
+
+    # « Quelle année… ? » demande un point d'une série. Une « évolution »
+    # sans mot d'évolution ni intervalle était une valeur ou un classement.
+    texte_q = _norm(question)
+    annee = bool(RE_QUELLE_ANNEE.search(texte_q))
+    cite = methode_citee(question)
+    if annee and plan.get("methode") in ("classement", "valeur_simple"):
+        plan["methode"], plan["top_n"] = "evolution", None
+    elif (plan.get("methode") == "evolution" and not annee
+          and cite != "evolution" and not _intervalle(plan)
+          and not RE_DUREE.search(texte_q)):
+        if niveau_classe or cite == "classement":
+            plan["methode"] = "classement"
+            plan["niveau"] = niveau_classe or plan.get("niveau") or "region"
+        else:
+            plan["methode"] = "valeur_simple"
+
+    if niveau_classe and (plan.get("methode") == "valeur_simple"
+                          or (plan.get("methode") == "comparaison"
+                              and len(plan.get("zones") or []) < 2)):
         plan["methode"] = "classement"
         plan["niveau"] = niveau_classe
 
