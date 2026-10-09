@@ -34,7 +34,7 @@ services:
     # Port publié uniquement pour inspecter la base depuis la machine hôte.
     # Peut être retiré sans conséquence sur le fonctionnement.
     ports:
-      - "${DB_PORT_HOTE:-5433}:5432"
+      - "127.0.0.1:${DB_PORT_HOTE:-5433}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-statsense}"]
       interval: 5s
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.35.0
     container_name: statsense_ollama
     environment:
       # Le modèle reste chargé en mémoire. Sans cela il est libéré au bout de
@@ -66,7 +66,7 @@ services:
   # télécharger. `app` ne l'attend pas : si le réseau manque, la plateforme
   # démarre quand même et les questions préchauffées répondent.
   ollama-init:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.35.0
     container_name: statsense_ollama_init
     depends_on:
       ollama:

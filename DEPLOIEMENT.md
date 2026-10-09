@@ -16,7 +16,7 @@ une quinzaine de minutes, dont l'essentiel en téléchargement.
 | Mémoire | 8 Go minimum, 16 Go recommandés |
 | Disque | 20 Go libres |
 | Processeur | 4 cœurs recommandés |
-| Réseau | requis au premier démarrage uniquement (téléchargement du modèle) |
+| Réseau | requis au premier démarrage uniquement : construction de l'image (paquets Python et npm) et téléchargement du modèle |
 
 Aucune autre dépendance : ni Python, ni Node, ni PostgreSQL sur la machine
 hôte. Tout est dans les images.
@@ -65,8 +65,9 @@ modèle et la base vivent dans des volumes Docker persistants.
 docker compose ps
 ```
 
-Quatre services : `db` et `ollama` sains, `app` démarré, `ollama_init`
-terminé après le téléchargement.
+Quatre services : `db` et `ollama` sains, `app` démarré, `ollama-init`
+terminé après le téléchargement (il n'apparaît plus dans la liste une fois
+arrêté ; `docker compose ps -a` le montre).
 
 ### La base est complète
 
@@ -144,6 +145,10 @@ sert elle-même le frontend : aucun second serveur web n'est nécessaire.
 
 ### Changer de modèle
 
+Le modèle par défaut, `qwen2.5:3b-instruct`, a été choisi pour fonctionner
+sur un simple processeur avec 8 Go de mémoire. Sur une machine équipée d'une
+carte graphique, un modèle plus grand se règle en une ligne :
+
 ```
 OLLAMA_MODEL=qwen2.5:14b-instruct
 ```
@@ -161,6 +166,14 @@ machine qui l'a déjà :
 ```bash
 docker compose cp ~/.ollama/models/. ollama:/root/.ollama/models/
 docker compose restart ollama
+```
+
+Sans aucun réseau, l'image de l'application doit aussi être construite
+ailleurs, puis transférée :
+
+```bash
+docker save statsense-app | gzip > statsense-app.tar.gz   # machine connectée
+docker load < statsense-app.tar.gz                         # machine cible
 ```
 
 ---
@@ -200,11 +213,11 @@ chaque correction appliquée.
 Après un rechargement ou un préchauffage :
 
 ```bash
-docker compose exec -T db pg_dump -U statsense -d statsense \
-  --data-only --no-owner --no-privileges -Fc \
-  -t 'catalog_*' -t 'geography_*' -t 'observations_*' -t 'api_*' \
-  > data/backups/statsense.dump
+./docker/dump.sh
 ```
+
+Le script vérifie que les quatre familles de tables sont présentes avant de
+remplacer `data/backups/statsense.dump`.
 
 Le dump porte les données **et** le cache des questions préchauffées. Il
 doit donc être régénéré après le préchauffage, jamais avant.
@@ -217,7 +230,7 @@ doit donc être régénéré après le préchauffage, jamais avant.
 `DB_PORT_HOTE` dans `.env`.
 
 **L'application répond, mais toute question neuve échoue.** Le modèle n'est
-pas encore téléchargé. `docker compose logs ollama_init` donne l'avancement.
+pas encore téléchargé. `docker compose logs ollama-init` donne l'avancement.
 
 **« qwen2.5:3b-instruct absent ».** Le téléchargement a échoué, faute de
 réseau. L'application fonctionne avec les questions en cache ; voir la
@@ -257,13 +270,12 @@ l'image et servi par Django. Chaque service en moins est une panne en moins.
 
 ```
 question en français
-  -> reconnaissance des questions documentaires     (code)
-  -> présélection du catalogue                      (PostgreSQL)
-  -> extraction d'un plan de requête                (modèle de langage)
-  -> sept corrections déterministes                 (code)
-  -> calcul                                         (SQL paramétré)
-  -> narration sur le résultat calculé              (modèle de langage)
-  -> vérification des nombres cités                 (code)
+  -> questions documentaires et analyses non proposées  (code)
+  -> présélection du catalogue                          (PostgreSQL)
+  -> extraction d'un plan de requête                    (modèle de langage)
+  -> corrections déterministes du plan                  (code)
+  -> calcul                                             (SQL paramétré)
+  -> rédaction de la réponse                            (code)
 ```
 
 Le modèle de langage ne voit aucun chiffre et n'en produit aucun. Il traduit
@@ -271,7 +283,7 @@ une question en plan ; le calcul est fait en SQL déterministe. Les quatre
 formules des indicateurs dérivés sont déclarées dans le catalogue, lisibles
 dans `data/seed/catalogue.py`.
 
-Sept champs du plan lui ont été retirés — zones, ventilations, périodes,
+Sept champs du plan sur huit lui ont été retirés — zones, ventilations, périodes,
 sens du tri, nombre d'éléments, niveau géographique, méthode — parce que
 chacun a une forme fermée que le code reconnaît sans faillir.
 
@@ -285,11 +297,11 @@ chacun a une forme fermée que le code reconnaît sans faillir.
 132 672 observations, 16 indicateurs, 25 855 zones sur cinq niveaux
 administratifs.
 
-Trois anomalies ont été relevées dans les fichiers d'origine au chargement —
-lignes dupliquées, villages homonymes, totaux incompatibles avec leurs
-composantes. Chacune est corrigée de façon documentée et nommée dans le
-journal de chargement. Elles ont été signalées à l'ANSD le 30 septembre
-2026, qui a indiqué les examiner.
+Trois anomalies ont été relevées dans les fichiers téléchargés : lignes
+dupliquées (Ziguinchor, un défaut d'affichage du site corrigé depuis par
+l'ANSD), villages homonymes, et totaux incompatibles avec leurs composantes.
+Chacune est traitée de façon documentée et nommée dans le journal de
+chargement. Elles ont été signalées à l'ANSD le 30 septembre 2026.
 
 ---
 
