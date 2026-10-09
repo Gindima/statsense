@@ -393,10 +393,34 @@ def classement(plan):
     desc = (plan.get("ordre") or "desc") == "desc"
     lignes.sort(key=lambda l: l["valeur"], reverse=desc)
 
+
+    complet = list(lignes)
     n = plan.get("top_n") or TOP_N_DEFAUT
     lignes = lignes[:min(int(n), MAX_LIGNES)]
 
     notes = []
+    d = 1 if _est_un_taux(ind.unite) else (0 if ind.agregeable else 2)
+
+    # « L'écart entre la meilleure et la plus faible » : calculé sur le
+    # classement COMPLET, pas sur les lignes affichées.
+    if plan.get("ecart_extremes") and len(complet) >= 2:
+        haut = max(complet, key=lambda l: Decimal(l["valeur"]))
+        bas = min(complet, key=lambda l: Decimal(l["valeur"]))
+        e = Decimal(haut["valeur"]) - Decimal(bas["valeur"])
+        quantite = (f"{_fr(e, 1)} points" if _est_un_taux(ind.unite)
+                    else f"{_fr(e, d)} {ind.unite}")
+        notes.append(f"Écart entre {haut['zone']} ({_fr(haut['valeur'], d)}) "
+                     f"et {bas['zone']} ({_fr(bas['valeur'], d)}) : "
+                     f"{quantite}.")
+
+    # Repère national pour un taux : « mieux que la moyenne nationale ? »
+    if not ind.agregeable and niveau != Niveau.NATIONAL:
+        nat = Zone.objects.filter(niveau=Niveau.NATIONAL).first()
+        v_nat = valeur(ind, nat, periode, filtres) if nat else None
+        if v_nat is not None:
+            notes.append(f"Valeur nationale publiée en {periode} : "
+                         f"{_fr(v_nat, d)} {ind.unite}.")
+
     if manquantes:
         notes.append(f"{len(manquantes)} zone(s) sans donnée, exclues du "
                      f"classement : {', '.join(sorted(manquantes)[:5])}"
@@ -579,6 +603,16 @@ def evolution(plan):
                      "de la saisonnalité de cette série.")
 
     variations = _variations(serie, ind.unite, glissement)
+
+    # Taux : variation moyenne en points par an, sur la durée réelle.
+    if variations["est_taux"] and variations["annees"]:
+        pts = Decimal(variations["variation_absolue"]) / \
+            Decimal(str(variations["annees"]))
+        signe = "+" if pts >= 0 else "−"
+        notes.append(f"Variation moyenne entre {serie[0]['periode']} et "
+                     f"{serie[-1]['periode']} : {signe}{_fr(abs(pts), 1)} "
+                     f"point par an.")
+
     note = _note_agregation(ind, zone.niveau)
     if note:
         notes.append(note)

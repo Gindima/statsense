@@ -449,16 +449,28 @@ def seuil_cite(question):
     return None
 
 
+RE_ZONES_PLURIEL = re.compile(r"\b(regions|departements|communes|quartiers)\b")
+
 def classement_evolution(question):
-    """« Quelle région a connu la plus forte hausse ? » : un classement
-    de variations, que le moteur ne sait pas faire."""
+    """
+    Plusieurs zones comparées dans le temps : « quelles régions ont le plus
+    progressé », « quelle part des régions a amélioré… entre 2016 et
+    2023 », « les cinq régions les moins bien classées en 2015 ». Le moteur
+    suit UNE zone dans le temps ; il ne compare pas des trajectoires.
+    """
     texte = _norm(question)
-    if methode_citee(question) != "evolution":
+    cite = methode_citee(question)
+    annees = set(re.findall(r"\b(?:19|20)\d{2}\b", texte))
+    if RE_ZONES_PLURIEL.search(texte) and (cite == "evolution"
+                                           or len(annees) >= 2):
+        return True
+    if cite != "evolution":
         return False
     if not re.search(r"\b(le|la|les) (plus|moins)\b", texte):
         return False
     return bool(classement_demande(question)
                 or re.match(r"(ou|dans quelle|quelle|quel)\b", texte))
+
 
 def corriger_cadrage(plan, question):
     """
@@ -547,6 +559,11 @@ def corriger_cadrage(plan, question):
             and nombre_cite(question) is None):
         plan["methode"] = "valeur_simple"
 
+    # « l'écart entre la meilleure et la plus faible » : le moteur ajoute
+    # l'écart entre les extrêmes du classement complet.
+    if plan.get("methode") == "classement" and " ecart" in f" {_norm(question)}":
+        plan["ecart_extremes"] = True
+
     # --- nombre d'éléments ---
     #
     # Priorité décroissante, et chaque niveau dit pourquoi il passe avant
@@ -573,3 +590,41 @@ def corriger_cadrage(plan, question):
             plan["top_n"] = TOP_N_DEFAUT
 
     return plan
+
+# Familles d'indicateurs reconnaissables. La population et les ménages en
+# sont exclus : leurs ratios (taille des ménages, part, rapport) sont servis
+# par le catalogue et ne sont pas des croisements.
+FAMILLES = {
+    "eau": (("eau",), "l'accès à l'eau améliorée"),
+    "electricite": (("electricite", "eclairage"), "l'accès à l'électricité"),
+    "bienetre": (("bien etre", "quintile"), "l'indice de bien-être"),
+    "chomage": (("chomage",), "le taux de chômage"),
+    "emploi": (("emploi",), "le taux d'emploi"),
+    "natalite": (("natalite", "naissances"), "le taux de natalité"),
+    "mortalite": (("mortalite", "deces"), "le taux de mortalité"),
+}
+MOTS_TOUS_INDICATEURS = ("les indicateurs", "tous les indicateurs",
+                         "plusieurs indicateurs", "indicateurs disponibles")
+
+
+def croisement_cite(question):
+    """Libellés des familles croisées, ou None si la question n'en nomme
+    qu'une."""
+    texte = f" {_norm(question)} "
+    vues = [lib for mots, lib in FAMILLES.values()
+            if any(f" {m} " in texte for m in mots)]
+    if len(vues) >= 2:
+        return vues
+    if any(f" {m} " in texte for m in MOTS_TOUS_INDICATEURS):
+        return ["plusieurs indicateurs"]
+    return None
+
+
+MOTS_PROJECTION = ("au meme rythme", "pourrait on atteindre",
+                   "pourra t on atteindre", "extrapol", "prevision",
+                   "prevoir", "dans cinq ans", "dans 5 ans", "d ici 20")
+
+
+def projection_demandee(question):
+    texte = f" {_norm(question)} "
+    return any(m in texte for m in MOTS_PROJECTION)

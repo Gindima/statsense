@@ -1,0 +1,157 @@
+
+ 1. Quelles régions ont un meilleur accès à l'électricité que la moyenne nationale ?   (40s, origine modele)
+    plan    : classement · acces_electricite · niveau=region · top10 desc
+    obtenu  : 10 ligne(s), unité « % »
+              DAKAR = 98.2
+              THIES = 92.2
+              DIOURBEL = 87.0
+              KAOLACK = 74.7
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+ 2. Quelles régions ont à la fois un faible accès à l'eau améliorée et un faible accès à l'électricité ?   (40s, origine modele)
+    plan    : classement · acces_eau · niveau=region · zones=SENEGAL · top10 desc
+    obtenu  : 10 ligne(s), unité « % »
+              LOUGA = 98.6
+              KAFFRINE = 95.3
+              MATAM = 94.1
+              THIES = 91.3
+              … et 6 autre(s)
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+
+ 3. Compare l'indice de bien-être et l'accès à l'eau améliorée dans chaque région.   (42s, origine modele)
+    plan    : classement · indice_bienetre · niveau=region · zones=SENEGAL · top10 desc
+    obtenu  : REFUS ventilation_requise
+    message : « Indice de bien-être » n'est publié que par quintile de niveau de vie : pour chaque zone, la part de sa population dans chaque quintile (le plus pauvre, deuxième, intermédiaire, quatrième, le plus ai
+
+ 4. Les régions ayant le meilleur accès à l'électricité ont-elles aussi un indice de bien-être élevé ?   (40s, origine modele)
+    plan    : classement · indice_bienetre · niveau=region · zones=SENEGAL · top10 desc
+    obtenu  : REFUS ventilation_requise
+    message : « Indice de bien-être » n'est publié que par quintile de niveau de vie : pour chaque zone, la part de sa population dans chaque quintile (le plus pauvre, deuxième, intermédiaire, quatrième, le plus ai
+
+ 5. Quelle est la différence entre l'accès à l'eau en milieu urbain et en milieu rural à Dakar ?   (41s, origine modele)
+    plan    : comparaison · acces_eau · zones=DAKAR · dim=milieu
+    obtenu  : REFUS donnee_absente
+    message : Pas assez de données pour comparer « Accès à une source d'eau améliorée » en 2023 : DAKAR · Rural, DAKAR · Urbain sans donnée.
+
+ 6. Quelles régions ont connu une amélioration simultanée de l'accès à l'eau et de l'accès à l'électricité ?   (41s, origine modele)
+    plan    : classement · acces_eau_acces_electricite · niveau=region · zones=SENEGAL · top10 desc
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « acces_eau_acces_electricite » ne figure pas dans le catalogue.
+
+ 7. Identifie les régions dont l'indice de bien-être a progressé alors que l'accès à l'eau a peu évolué.   (42s, origine modele)
+    plan    : evolution · indice_bienetre · niveau=region · zones=SENEGAL
+    obtenu  : REFUS ventilation_requise
+    message : « Indice de bien-être » n'est publié que par quintile de niveau de vie : pour chaque zone, la part de sa population dans chaque quintile (le plus pauvre, deuxième, intermédiaire, quatrième, le plus ai
+
+ 8. Quel est l'écart en points de pourcentage entre les régions ayant le meilleur et le plus faible accès à l'eau améliorée en 2023 ?   (43s, origine modele)
+    plan    : classement · acces_eau · niveau=region · zones=SENEGAL · periode=None→2023 · dim=type · top2 asc
+    obtenu  : 2 ligne(s), unité « % »
+              KOLDA = 40.0
+              SEDHIOU = 43.5
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+
+ 9. Quel a été le taux moyen annuel d'amélioration de l'accès à l'électricité entre 2016 et 2023 ?   (28s, origine modele)
+    plan    : evolution · acces_electricite · niveau=region · zones=SENEGAL · periode=2016→2023
+    obtenu  : 7 ligne(s), unité « % »
+              2016 = 64.5
+              2017 = 63.3
+              2018 = 74.3
+              2019 = 70.3
+              … et 3 autre(s)
+    note    : Aucune donnée pour 2022 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 82,3 % en 2021 ; la plus basse : 63,3 % en 2017.
+
+10. Si l'accès à l'eau améliorée progresse au même rythme, quel niveau pourrait-on atteindre cinq ans après la dernière année disponible ?   (37s, origine modele)
+    plan    : evolution · acces_eau · niveau=region · zones=SENEGAL
+    obtenu  : 9 ligne(s), unité « % »
+              2002 = 66.8
+              2013 = 83.9
+              2016 = 72.5
+              2017 = 74.0
+              … et 5 autre(s)
+    note    : Valeur la plus élevée : 83,9 % en 2013 ; la plus basse : 66,8 % en 2002.
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+    note    : Les points de cette série proviennent d'enquêtes différentes, menées à des années irrégulières. Un écart entre deux points peut refléter un changement de méthod
+
+11. Pour chaque région, calcule la variation relative de l'indice de bien-être entre 2015 et 2023.   (40s, origine modele)
+    plan    : evolution · indice_bienetre · niveau=region · zones=SENEGAL · periode=2015→2023
+    obtenu  : REFUS ventilation_requise
+    message : « Indice de bien-être » n'est publié que par quintile de niveau de vie : pour chaque zone, la part de sa population dans chaque quintile (le plus pauvre, deuxième, intermédiaire, quatrième, le plus ai
+
+12. Quelle part des régions a amélioré son accès à l'électricité entre 2016 et 2023 ?   (38s, origine modele)
+    plan    : evolution · acces_electricite · niveau=region · zones=SENEGAL · periode=2016→2023
+    obtenu  : 7 ligne(s), unité « % »
+              2016 = 64.5
+              2017 = 63.3
+              2018 = 74.3
+              2019 = 70.3
+              … et 3 autre(s)
+    note    : Aucune donnée pour 2022 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 82,3 % en 2021 ; la plus basse : 63,3 % en 2017.
+
+13. Classe les régions selon l'écart entre leur accès à l'eau améliorée et leur accès à l'électricité.   (30s, origine modele)
+    plan    : classement · acc_eau_amel_acc_elec · niveau=region · top10 desc
+    obtenu  : REFUS indicateur_absent
+    message : L'indicateur « acc_eau_amel_acc_elec » ne figure pas dans le catalogue.
+
+14. Quelles sont les trois régions qui ont le plus progressé en matière d'accès à l'eau, sans tenir compte de leur niveau de départ ?   (35s, origine modele)
+    plan    : evolution · acces_eau · niveau=region · zones=SENEGAL
+    obtenu  : 9 ligne(s), unité « % »
+              2002 = 66.8
+              2013 = 83.9
+              2016 = 72.5
+              2017 = 74.0
+              … et 5 autre(s)
+    note    : Valeur la plus élevée : 83,9 % en 2013 ; la plus basse : 66,8 % en 2002.
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+    note    : Les points de cette série proviennent d'enquêtes différentes, menées à des années irrégulières. Un écart entre deux points peut refléter un changement de méthod
+
+15. Compare l'accès à l'eau améliorée en 2023 dans les cinq régions les moins bien classées en 2015.   (40s, origine modele)
+    plan    : evolution · acces_eau · niveau=region · zones=SENEGAL · periode=2015→2023
+    obtenu  : 7 ligne(s), unité « % »
+              2016 = 72.5
+              2017 = 74.0
+              2018 = 73.4
+              2019 = 69.9
+              … et 3 autre(s)
+    note    : Période demandée à partir de 2015 ; la série commence en 2016.
+    note    : Aucune donnée pour 2022 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 83,5 % en 2023 ; la plus basse : 69,9 % en 2019.
+
+16. Trouve les régions où l'accès à l'électricité progresse, mais où l'indice de bien-être stagne.   (41s, origine modele)
+    plan    : evolution · acces_electricite · niveau=region · zones=SENEGAL
+    obtenu  : 7 ligne(s), unité « % »
+              2016 = 64.5
+              2017 = 63.3
+              2018 = 74.3
+              2019 = 70.3
+              … et 3 autre(s)
+    note    : Aucune donnée pour 2022 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 82,3 % en 2021 ; la plus basse : 63,3 % en 2017.
+
+17. Peux-tu calculer un indicateur national d'accès à l'eau à partir des différentes sources d'approvisionnement, en évitant de compter deux fois les mêmes ménages ?   (38s, origine modele)
+    plan    : valeur_simple · acces_eau · niveau=national · zones=SENEGAL · dim=type
+    obtenu  : 1 ligne(s), unité « % »
+              SENEGAL 2023 = 83.5
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+
+18. Compare toutes les régions sur les indicateurs disponibles en 2023 et identifie celles qui présentent les résultats les plus contrastés.   (36s, origine modele)
+    plan    : repartition · pop_region · niveau=region · zones=SENEGAL · periode=None→2023 · dim=age
+    obtenu  : 17 ligne(s), unité « personnes »
+              0 à 4 ans = 2243737.0
+              5 à 9 ans = 2441371.0
+              10 à 14 ans = 2406019.0
+              15 à 19 ans = 2136503.0
+              … et 13 autre(s)
+    note    : Répartition par tranche d'âge  sur un total de 18 126 390 personnes.
+
+19. Réponds à la question suivante uniquement avec les données disponibles : quelles régions ont le plus progressé en matière de bien-être et d'accès aux services essentiels ? Signale les indicateurs ou années manquants.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Classer les zones selon leur évolution (hausse ou baisse) n'est pas encore proposé. La plateforme classe des niveaux à une date, ou suit l'évolution d'une zone dans le temps.
+
+19 questions en 693s
+

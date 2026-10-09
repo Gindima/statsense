@@ -1,0 +1,19 @@
+Quelles régions ont un meilleur accès à l'électricité que la moyenne nationale ?
+Quelles régions ont à la fois un faible accès à l'eau améliorée et un faible accès à l'électricité ?
+Compare l'indice de bien-être et l'accès à l'eau améliorée dans chaque région.
+Les régions ayant le meilleur accès à l'électricité ont-elles aussi un indice de bien-être élevé ?
+Quelle est la différence entre l'accès à l'eau en milieu urbain et en milieu rural à Dakar ?
+Quelles régions ont connu une amélioration simultanée de l'accès à l'eau et de l'accès à l'électricité ?
+Identifie les régions dont l'indice de bien-être a progressé alors que l'accès à l'eau a peu évolué.
+Quel est l'écart en points de pourcentage entre les régions ayant le meilleur et le plus faible accès à l'eau améliorée en 2023 ?
+Quel a été le taux moyen annuel d'amélioration de l'accès à l'électricité entre 2016 et 2023 ?
+Si l'accès à l'eau améliorée progresse au même rythme, quel niveau pourrait-on atteindre cinq ans après la dernière année disponible ?
+Pour chaque région, calcule la variation relative de l'indice de bien-être entre 2015 et 2023.
+Quelle part des régions a amélioré son accès à l'électricité entre 2016 et 2023 ?
+Classe les régions selon l'écart entre leur accès à l'eau améliorée et leur accès à l'électricité.
+Quelles sont les trois régions qui ont le plus progressé en matière d'accès à l'eau, sans tenir compte de leur niveau de départ ?
+Compare l'accès à l'eau améliorée en 2023 dans les cinq régions les moins bien classées en 2015.
+Trouve les régions où l'accès à l'électricité progresse, mais où l'indice de bien-être stagne.
+Peux-tu calculer un indicateur national d'accès à l'eau à partir des différentes sources d'approvisionnement, en évitant de compter deux fois les mêmes ménages ?
+Compare toutes les régions sur les indicateurs disponibles en 2023 et identifie celles qui présentent les résultats les plus contrastés.
+Réponds à la question suivante uniquement avec les données disponibles : quelles régions ont le plus progressé en matière de bien-être et d'accès aux services essentiels ? Signale les indicateurs ou années manquants.

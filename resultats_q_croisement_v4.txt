@@ -1,0 +1,116 @@
+
+ 1. Quelles régions ont un meilleur accès à l'électricité que la moyenne nationale ?   (56s, origine modele)
+    plan    : classement · acces_electricite · niveau=region · top10 desc
+    obtenu  : 10 ligne(s), unité « % »
+              DAKAR = 98.2
+              THIES = 92.2
+              DIOURBEL = 87.0
+              KAOLACK = 74.7
+              … et 6 autre(s)
+    note    : Valeur nationale publiée en 2023 : 77,0 %.
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+ 2. Quelles régions ont à la fois un faible accès à l'eau améliorée et un faible accès à l'électricité ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (l'accès à l'eau améliorée et l'accès à l'électricité) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa
+
+ 3. Compare l'indice de bien-être et l'accès à l'eau améliorée dans chaque région.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (l'accès à l'eau améliorée et l'indice de bien-être) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa s
+
+ 4. Les régions ayant le meilleur accès à l'électricité ont-elles aussi un indice de bien-être élevé ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (l'accès à l'électricité et l'indice de bien-être) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa sou
+
+ 5. Quelle est la différence entre l'accès à l'eau en milieu urbain et en milieu rural à Dakar ?   (40s, origine modele)
+    plan    : comparaison · acces_eau · zones=DAKAR · dim=milieu
+    obtenu  : REFUS donnee_absente
+    message : Pas assez de données pour comparer « Accès à une source d'eau améliorée » en 2023 : DAKAR · Rural, DAKAR · Urbain sans donnée.
+
+ 6. Quelles régions ont connu une amélioration simultanée de l'accès à l'eau et de l'accès à l'électricité ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (l'accès à l'eau améliorée et l'accès à l'électricité) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa
+
+ 7. Identifie les régions dont l'indice de bien-être a progressé alors que l'accès à l'eau a peu évolué.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (l'accès à l'eau améliorée et l'indice de bien-être) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa s
+
+ 8. Quel est l'écart en points de pourcentage entre les régions ayant le meilleur et le plus faible accès à l'eau améliorée en 2023 ?   (41s, origine modele)
+    plan    : classement · acces_eau · niveau=region · zones=SENEGAL · periode=None→2023 · dim=type · top2 asc
+    obtenu  : 2 ligne(s), unité « % »
+              KOLDA = 40.0
+              SEDHIOU = 43.5
+    note    : Écart entre LOUGA (98,6) et KOLDA (40,0) : 58,6 points.
+    note    : Valeur nationale publiée en 2023 : 83,5 %.
+    note    : Indicateur non agrégeable : les valeurs affichées sont celles publiées pour chaque zone, sans cumul.
+
+ 9. Quel a été le taux moyen annuel d'amélioration de l'accès à l'électricité entre 2016 et 2023 ?   (29s, origine modele)
+    plan    : evolution · acces_electricite · niveau=region · zones=SENEGAL · periode=2016→2023
+    obtenu  : 7 ligne(s), unité « % »
+              2016 = 64.5
+              2017 = 63.3
+              2018 = 74.3
+              2019 = 70.3
+              … et 3 autre(s)
+    note    : Aucune donnée pour 2022 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 82,3 % en 2021 ; la plus basse : 63,3 % en 2017.
+    note    : Variation moyenne entre 2016 et 2023 : +1,8 point par an.
+
+10. Si l'accès à l'eau améliorée progresse au même rythme, quel niveau pourrait-on atteindre cinq ans après la dernière année disponible ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Prolonger une tendance n'est pas proposé : la plateforme restitue les valeurs publiées, sans extrapoler. Les seules projections disponibles sont celles de la population, publiées par l'ANSD.
+
+11. Pour chaque région, calcule la variation relative de l'indice de bien-être entre 2015 et 2023.   (40s, origine modele)
+    plan    : evolution · indice_bienetre · niveau=region · zones=SENEGAL · periode=2015→2023
+    obtenu  : REFUS ventilation_requise
+    message : « Indice de bien-être » n'est publié que par quintile de niveau de vie : pour chaque zone, la part de sa population dans chaque quintile (le plus pauvre, deuxième, intermédiaire, quatrième, le plus ai
+
+12. Quelle part des régions a amélioré son accès à l'électricité entre 2016 et 2023 ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Comparer ou classer plusieurs zones selon leur évolution (progression, hausse, baisse) n'est pas encore proposé. La plateforme compare des zones à une date, ou suit l'évolution d'une zone dans le temp
+
+13. Classe les régions selon l'écart entre leur accès à l'eau améliorée et leur accès à l'électricité.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (l'accès à l'eau améliorée et l'accès à l'électricité) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa
+
+14. Quelles sont les trois régions qui ont le plus progressé en matière d'accès à l'eau, sans tenir compte de leur niveau de départ ?   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Comparer ou classer plusieurs zones selon leur évolution (progression, hausse, baisse) n'est pas encore proposé. La plateforme compare des zones à une date, ou suit l'évolution d'une zone dans le temp
+
+15. Compare l'accès à l'eau améliorée en 2023 dans les cinq régions les moins bien classées en 2015.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Comparer ou classer plusieurs zones selon leur évolution (progression, hausse, baisse) n'est pas encore proposé. La plateforme compare des zones à une date, ou suit l'évolution d'une zone dans le temp
+
+16. Trouve les régions où l'accès à l'électricité progresse, mais où l'indice de bien-être stagne.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (l'accès à l'électricité et l'indice de bien-être) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa sou
+
+17. Peux-tu calculer un indicateur national d'accès à l'eau à partir des différentes sources d'approvisionnement, en évitant de compter deux fois les mêmes ménages ?   (39s, origine modele)
+    plan    : valeur_simple · acces_eau · niveau=national · zones=SENEGAL · dim=type
+    obtenu  : 1 ligne(s), unité « % »
+              SENEGAL 2023 = 83.5
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+
+18. Compare toutes les régions sur les indicateurs disponibles en 2023 et identifie celles qui présentent les résultats les plus contrastés.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (plusieurs indicateurs) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa source. Posez une question par
+
+19. Réponds à la question suivante uniquement avec les données disponibles : quelles régions ont le plus progressé en matière de bien-être et d'accès aux services essentiels ? Signale les indicateurs ou années manquants.   (0s, origine ?)
+    plan    : —
+    obtenu  : REFUS analyse_non_traitee
+    message : Croiser plusieurs indicateurs (plusieurs indicateurs) n'est pas encore proposé : chaque réponse porte sur un seul indicateur, pour que chaque chiffre reste rattaché à sa source. Posez une question par
+
+19 questions en 244s
+

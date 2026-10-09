@@ -1,0 +1,35 @@
+
+ 1. Quelle est la différence d'accès à une source d'eau améliorée entre les milieux urbain et rural ?   (38s, origine modele)
+    plan    : comparaison · acces_eau · zones=SENEGAL · dim=milieu
+    obtenu  : 2 ligne(s), unité « % »
+              SENEGAL · Rural 2023 = 77.6
+              SENEGAL · Urbain 2023 = 89.3
+    note    : SENEGAL : écart de 11,7 points entre urbain et rural, en faveur du milieu urbain.
+    note    : Le taux affiché sans ventilation est la somme des quatre sources améliorées — robinet dans le logement, robinet public, puits avec pompe, puits protégé — calcul
+
+ 2. Compare l'accès à l'eau en milieu urbain et rural à Kolda.   (32s, origine modele)
+    plan    : comparaison · acces_eau · zones=KOLDA · dim=milieu
+    obtenu  : REFUS donnee_absente
+    message : Pas assez de données pour comparer « Accès à une source d'eau améliorée » en 2023 : KOLDA · Rural, KOLDA · Urbain sans donnée.
+
+ 3. Comment l'accès à une source d'eau améliorée a-t-il évolué au Sénégal entre 2015 et 2023 ?   (25s, origine modele)
+    plan    : evolution · acces_eau · niveau=region · zones=SENEGAL · periode=2015→2023
+    obtenu  : 7 ligne(s), unité « % »
+              2016 = 72.5
+              2017 = 74.0
+              2018 = 73.4
+              2019 = 69.9
+              … et 3 autre(s)
+    note    : Période demandée à partir de 2015 ; la série commence en 2016.
+    note    : Aucune donnée pour 2022 : la courbe relie directement les deux points voisins, et ce segment ne correspond à aucune mesure.
+    note    : Valeur la plus élevée : 83,5 % en 2023 ; la plus basse : 69,9 % en 2019.
+
+ 4. Compare la population masculine et féminine de Dakar et Thiès.   (36s, origine modele)
+    plan    : comparaison · pop_totale · zones=DAKAR,THIES · dim=sexe
+    obtenu  : 4 ligne(s), unité « personnes »
+              DAKAR · Femmes 2023 = 1985666.0
+              DAKAR · Hommes 2023 = 2018759.0
+              THIES · Femmes 2023 = 1206703.0
+              THIES · Hommes 2023 = 1256976.0
+    note    : DAKAR : 33 093 hommes de plus que de femmes (101,67 hommes pour 100 femmes).
+    note    : THIES : 50 273 hommes de plus que de femmes (104,17 hommes pour 100 femmes).

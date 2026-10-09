@@ -117,7 +117,8 @@ from .prompts import (
 )
 from .recherche import fiches, rechercher, zones_connues
 from .cadrage import (corriger_cadrage, corriger_comparaison, deux_sexes,
-                      maille_demandee, seuil_cite, classement_evolution)
+                      maille_demandee, seuil_cite, classement_evolution,
+                      croisement_cite, projection_demandee)
 from .zones import corriger_zones, niveau_de_zone
 
 
@@ -314,11 +315,30 @@ def repondre(question):
             f"({seuil}) n'est pas proposée. Un classement range les zones "
             f"dans l'ordre et permet de lire celles qui dépassent ce seuil.",
             "analyse_non_traitee")
+
+    croises = croisement_cite(question)
+    if croises:
+        noms = " et ".join(croises) if len(croises) > 1 else croises[0]
+        return _refus(
+            f"Croiser plusieurs indicateurs ({noms}) n'est pas encore "
+            f"proposé : chaque réponse porte sur un seul indicateur, pour "
+            f"que chaque chiffre reste rattaché à sa source. Posez une "
+            f"question par indicateur.",
+            "analyse_non_traitee")
+
+    if projection_demandee(question):
+        return _refus(
+            "Prolonger une tendance n'est pas proposé : la plateforme "
+            "restitue les valeurs publiées, sans extrapoler. Les seules "
+            "projections disponibles sont celles de la population, publiées "
+            "par l'ANSD.", "analyse_non_traitee")
+
     if classement_evolution(question):
         return _refus(
-            "Classer les zones selon leur évolution (hausse ou baisse) n'est "
-            "pas encore proposé. La plateforme classe des niveaux à une date, "
-            "ou suit l'évolution d'une zone dans le temps.",
+            "Comparer ou classer plusieurs zones selon leur évolution "
+            "(progression, hausse, baisse) n'est pas encore proposé. La "
+            "plateforme compare des zones à une date, ou suit l'évolution "
+            "d'une zone dans le temps.",
             "analyse_non_traitee")
 
     # 1. Présélection du catalogue : le modèle choisira dans cette liste.
