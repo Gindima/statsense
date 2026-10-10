@@ -1,0 +1,30 @@
+Quels sont les 10 quartiers qui comptent le plus de ménages au Sénégal ?
+Quels quartiers ont une population supérieure à 20 000 habitants ?
+Quels sont les quartiers ayant le plus grand nombre de concessions par ménage ?
+Quelle est la taille moyenne des ménages dans les cinq quartiers les plus peuplés de Dakar ?
+Quels quartiers ont plus de ménages que la moyenne nationale des quartiers ?
+Quelle est la différence de taille moyenne des ménages entre les quartiers de Dakar et ceux de Ziguinchor ?
+Quelle est la différence entre le nombre de ménages et le nombre de concessions à Dakar ?
+Quelle proportion des ménages du Sénégal vit dans la région de Dakar ?
+Quelles régions ont une population supérieure à un million d'habitants en 2023 ?
+Quel est le rapport entre la population totale et le nombre de ménages dans chacune des régions ?
+Quelles régions ont le plus grand nombre de ménages par rapport à leur population ?
+Quelle est la différence en pourcentage entre la population de Dakar en 2023 et sa population projetée en 2025 ?
+Quelles régions ont un taux de chômage inférieur au taux national en 2025 ?
+Dans quelles régions le taux de chômage a-t-il diminué entre 2021 et 2025 ?
+Quelle est la différence entre le taux de chômage le plus élevé et le plus faible en 2025 ?
+Quelles régions ont connu une hausse du chômage pendant deux périodes consécutives ?
+Quelle a été l'évolution du taux de chômage national entre 2017 et 2021 ?
+Quelles régions ont un taux de chômage supérieur à 30 % dans les dernières données disponibles ?
+Comment le taux brut de natalité a-t-il évolué entre 1992 et 2020 ?
+Quelle est la différence entre le taux brut de natalité le plus élevé et le plus faible de la série disponible ?
+Quelles années ont enregistré une hausse du taux brut de natalité par rapport à la mesure précédente ?
+Quel est le taux brut de natalité le plus récent disponible et à quelle année correspond-il ?
+Le taux brut de natalité a-t-il diminué de manière continue depuis 1992 ?
+Compare l'évolution du taux de natalité et celle de la population nationale sur les années communes disponibles.
+Donne-moi les cinq régions les plus peuplées, mais affiche les résultats de la moins peuplée à la plus peuplée.
+Affiche les trois régions les moins touchées par le chômage, sans inclure les régions dont les données sont absentes.
+Quelle était la population de Dakar en 2023 ? Si tu ne disposes que d'une projection, précise-le.
+Donne-moi la dernière valeur disponible pour chaque région, même si les années diffèrent.
+Quelle est la population totale des cinq quartiers les plus peuplés, et quelle part représentent-ils dans la population nationale ?
+Si je demande le taux de chômage des quartiers de Dakar, peux-tu m'indiquer le niveau géographique auquel cet indicateur est réellement disponible ?

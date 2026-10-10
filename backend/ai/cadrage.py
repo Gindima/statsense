@@ -266,8 +266,19 @@ def methode_citee(question):
 # « du plus élevé au plus faible » : le premier terme donne le sens.
 RE_DU_AU = re.compile(r"\bdu (.+?) au ")
 
+# « de la moins peuplée à la plus peuplée »
+RE_DE_A = re.compile(r"\bde (?:la |le |l )?(.+?) a (?:la|le|l) ")
+# « …, mais affiche … » : ce qui suit dit l'ordre d'affichage, pas la sélection
+RE_AFFICHE = re.compile(
+    r" (?:mais |puis |et )?(?:affich|present|range|trie|ordonn)\w*")
+# « dernière valeur », « le plus récent » : ce n'est pas un sens de tri
+RE_DERNIERE = re.compile(
+    r"\b(?:derni\w*|plus recente?s?) (?:donnee|valeur|annee|mesure|chiffre|"
+    r"periode|disponible)s?\b|\b(?:le|la) plus recente?\b")
+
 
 def _sens(texte):
+    texte = RE_DERNIERE.sub(" ", texte)
     for m in MOTS_ASC + ("croissant",):
         if f" {m}" in texte:
             return "asc"
@@ -277,15 +288,36 @@ def _sens(texte):
     return None
 
 
+def _coupure(texte):
+    m = RE_AFFICHE.search(texte)
+    if m and m.start() > 0 and _sens(texte[:m.start()] + " "):
+        return m.start()
+    return None
+
+
 def ordre_cite(question):
-    """Sens du tri demandé : « desc », « asc », ou None."""
+    """Sens du tri demandé pour la SÉLECTION : « desc », « asc », ou None."""
     texte = f" {_norm(question)} "
+    c = _coupure(texte)
+    if c:
+        texte = texte[:c] + " "
     m = RE_DU_AU.search(texte)
     if m:
         sens = _sens(f" {m.group(1)} ")
         if sens:
             return sens
     return _sens(texte)
+
+
+def ordre_affichage(question):
+    """Ordre d'affichage demandé après la sélection, ou None."""
+    texte = f" {_norm(question)} "
+    c = _coupure(texte)
+    if not c:
+        return None
+    suite = texte[c:]
+    m = RE_DU_AU.search(suite) or RE_DE_A.search(suite)
+    return _sens(f" {m.group(1)} ") if m else None
 
 
 def nombre_cite(question):
@@ -424,10 +456,18 @@ RE_MAILLE = re.compile(
     r"(region|departement|commune|quartier|village|localite)s?\b")
 
 # « supérieure à 8 », « plus de 1 000 » — mais pas « plus de 60 ans ».
+# backend/ai/cadrage.py — REMPLACER RE_SEUIL et seuil_cite
+
 RE_SEUIL = re.compile(
     r"\b(?:superieure?s? a|inferieure?s? a|au dessus de|en dessous de|"
-    r"au dela de|depassant|plus de|moins de)\s+(\d+(?: \d{3})*)")
+    r"au dela de|depassant|plus de|moins de)\s+"
+    r"(\d+(?: \d{3})*(?: millions?)?"
+    r"|(?:un|deux|trois|quatre|cinq|dix|cent) (?:millions?|mille))")
 
+RE_SEUIL_MOYENNE = re.compile(
+    r"\b(?:plus|moins) de \w+ que la moyenne\b"
+    r"|\b(?:superieure?s?|inferieure?s?) a la moyenne\b"
+    r"|\b(?:au dessus|en dessous) de la moyenne\b")
 
 def _intervalle(plan):
     p = plan.get("periode") or {}
@@ -439,15 +479,15 @@ def maille_demandee(question):
     m = RE_MAILLE.search(_norm(question))
     return NIVEAU_DU_NOM.get(m.group(1), m.group(1)) if m else None
 
-
 def seuil_cite(question):
     texte = _norm(question)
     for m in RE_SEUIL.finditer(texte):
         if re.match(r"\s*ans\b", texte[m.end():]):
             continue
         return m.group(1)
+    if RE_SEUIL_MOYENNE.search(texte):
+        return "la moyenne"
     return None
-
 
 RE_ZONES_PLURIEL = re.compile(r"\b(regions|departements|communes|quartiers)\b")
 
@@ -470,6 +510,54 @@ def classement_evolution(question):
         return False
     return bool(classement_demande(question)
                 or re.match(r"(ou|dans quelle|quelle|quel)\b", texte))
+
+
+# backend/ai/cadrage.py — AJOUTER après classement_evolution (niveau module)
+
+# « dans les cinq quartiers les plus peuplés » : deux calculs enchaînés
+RE_SOUS_ENSEMBLE = re.compile(
+    r"\b(?:dans|parmi|pour) (?:les|ces) "
+    r"(?:\d{1,2}|deux|trois|quatre|cinq|six|sept|huit|neuf|dix) "
+    r"(?:regions|departements|communes|quartiers) (?:les )?(?:plus|moins)\b")
+
+
+def etapes_multiples(question):
+    return bool(RE_SOUS_ENSEMBLE.search(_norm(question)))
+
+
+# « différence entre le nombre de ménages et le nombre de concessions »
+RE_DEUX_COMPTES = re.compile(
+    r"\b(?:difference|ecart|somme)s? entre\b.*?"
+    r"\b(menages?|concessions?|habitants|population)\b.*?\bet\b.*?"
+    r"\b(menages?|concessions?|habitants|population)\b")
+
+
+def comptes_croises(question):
+    m = RE_DEUX_COMPTES.search(_norm(question))
+    if not m:
+        return None
+    a, b = (x.rstrip("s").replace("habitant", "population")
+            for x in m.groups())
+    return list(m.groups()) if a != b else None
+
+
+# « quelle proportion des ménages vit à Dakar » : non calculée
+MOTS_PART_MENAGES = ("proportion", "quelle part", "part des menages",
+                     "pourcentage des menages")
+EXCLUS_PART = ("eau", "electri", "eclairage", "quintile", "bien etre",
+               "acces", "taille", "par menage")
+
+
+def part_menages(question):
+    t = f" {_norm(question)} "
+    return (" menage" in t
+            and any(f" {m}" in t for m in MOTS_PART_MENAGES)
+            and not any(f" {m}" in t for m in EXCLUS_PART))
+
+
+RE_ECART = re.compile(r"\becarts?\b|\bdifference entre\b.*\bplus\b.*\bplus\b")
+RE_RECENT = re.compile(
+    r"\bplus recente?s?\b|\bderni\w* (?:valeur|donnee|mesure|chiffre)s?\b")
 
 
 def corriger_cadrage(plan, question):
@@ -528,6 +616,12 @@ def corriger_cadrage(plan, question):
     if sens:
         plan["ordre"] = sens
 
+    aff = ordre_affichage(question)
+    if aff and aff != plan.get("ordre"):
+        plan["inverser_affichage"] = True
+    if plan.get("inverse") and plan.get("methode") == "classement":
+        plan["ordre"] = "asc" if plan.get("ordre") == "desc" else "desc"
+
     # Une répartition sur une dimension déjà filtrée ne demande qu'UNE
     # modalité. Constaté : « l'indice du quintile le plus pauvre à Kolda »
     # -> répartition par quintile ET filtre quintile = le plus pauvre.
@@ -561,9 +655,20 @@ def corriger_cadrage(plan, question):
 
     # « l'écart entre la meilleure et la plus faible » : le moteur ajoute
     # l'écart entre les extrêmes du classement complet.
-    if plan.get("methode") == "classement" and " ecart" in f" {_norm(question)}":
+    if plan.get("methode") == "classement" and RE_ECART.search(_norm(question)):
         plan["ecart_extremes"] = True
+        plan["ordre"] = "desc"
+        plan["top_n"] = 60
 
+    # « le plus récent », « la dernière valeur » : un seul point, le dernier.
+    # Placé ici, après toutes les requalifications en classement.
+    if (RE_RECENT.search(texte_q) and not maille_demandee(question)
+            and not niveau_classe
+            and plan.get("methode") in ("classement", "evolution",
+                                        "repartition")):
+        plan["methode"], plan["top_n"] = "valeur_simple", None
+        plan["dimension"] = None
+    
     # --- nombre d'éléments ---
     #
     # Priorité décroissante, et chaque niveau dit pourquoi il passe avant

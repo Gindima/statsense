@@ -118,7 +118,7 @@ from .prompts import (
 from .recherche import fiches, rechercher, zones_connues
 from .cadrage import (corriger_cadrage, corriger_comparaison, deux_sexes,
                       maille_demandee, seuil_cite, classement_evolution,
-                      croisement_cite, projection_demandee)
+                      croisement_cite, projection_demandee, etapes_multiples, comptes_croises, part_menages)
 from .zones import corriger_zones, niveau_de_zone
 
 
@@ -341,6 +341,36 @@ def repondre(question):
             "d'une zone dans le temps.",
             "analyse_non_traitee")
 
+    if etapes_multiples(question):
+        return _refus(
+            "Cette question enchaîne deux calculs : choisir des zones selon "
+            "un premier critère, puis calculer un autre indicateur sur ces "
+            "zones. Posez-les l'une après l'autre.",
+            "analyse_non_traitee",
+            alternatives=["Quels sont les cinq quartiers les plus peuplés "
+                          "de Dakar ?",
+                          "Quelle est la taille moyenne des ménages à Dakar ?"])
+
+    comptes = comptes_croises(question)
+    if comptes:
+        return _refus(
+            f"Combiner deux effectifs ({' et '.join(comptes)}) n'est pas "
+            f"proposé : chaque réponse porte sur un seul indicateur. Le "
+            f"rapport « ménages par concession », lui, est publié.",
+            "analyse_non_traitee",
+            alternatives=["Combien de ménages compte Dakar ?",
+                          "Combien de ménages par concession à Dakar ?"])
+
+    if part_menages(question):
+        return _refus(
+            "La part des ménages d'une zone dans le total national n'est pas "
+            "calculée ; seule la part de la population (poids démographique) "
+            "l'est.",
+            "analyse_non_traitee",
+            alternatives=["Quelle part de la population vit dans la région "
+                          "de Dakar ?",
+                          "Combien de ménages compte la région de Dakar ?"])
+
     # 1. Présélection du catalogue : le modèle choisira dans cette liste.
     candidats = rechercher(question)
     if not candidats:
@@ -529,9 +559,29 @@ def repondre(question):
             f"masculinité publié : {inverse:.2f} femmes pour 100 hommes."
         ).replace(".", ",", 1))
 
+    if plan.get("inverse"):
+        if plan["indicateur"] == "menages_par_concession":
+            note = ("La base publie le nombre de ménages par concession ; "
+                    "le nombre de concessions par ménage en est l'inverse.")
+            if len(resultat.lignes) == 1 and resultat.lignes[0]["valeur"]:
+                inv = 1 / float(resultat.lignes[0]["valeur"])
+                note += (f" Ici : {inv:.2f} concession par ménage."
+                         ).replace(".", ",", 1)
+            elif plan.get("methode") == "classement":
+                note += " Classement inversé en conséquence."
+        else:
+            note = ("Plus de ménages par habitant signifie des ménages plus "
+                    "petits : le classement suit la taille moyenne des "
+                    "ménages, dans l'ordre inverse.")
+        resultat.notes.insert(0, note)
+
     # 5-6. Narration, puis vérification des nombres cités.
     texte, meta_texte = raconter(question, resultat)
 
+    if plan.get("inverser_affichage"):
+        resultat.lignes.reverse()
+        resultat.notes.insert(0, "Sélection faite selon la question ; "
+                                 "affichage dans l'ordre demandé.")
     return {
         "statut": "ok",
         "question": question,

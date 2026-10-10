@@ -327,6 +327,14 @@ MOTS_PART = ("quelle part", "part de la population", "la part de",
              "quel pourcentage", "pourcentage de la population",
              "proportion", "poids demographique")
 
+
+# Codes inventés : « menages_quartier », « population_region »
+RE_CODE_NIVEAU = re.compile(
+    r"^(menages|nombre_menages|pop_totale|population)_(?:par_)?"
+    r"(quartier|commune|departement|region)s?$")
+CODE_BASE = {"nombre_menages": "menages", "population": "pop_totale"}
+
+
 def corriger_indicateur(plan, question):
     """Erreurs mesurées du modèle sur le sexe, les ratios et les parts."""
     from .filtres import filtres_cites
@@ -335,6 +343,11 @@ def corriger_indicateur(plan, question):
     un_sexe = "sexe" in filtres_cites(question)[0]
     texte = _norm(question)
 
+    m = RE_CODE_NIVEAU.match(code)
+    if m:
+        code = plan["indicateur"] = CODE_BASE.get(m.group(1), m.group(1))
+        plan["niveau"] = m.group(2)
+
     if RE_POP_SEXE.match(code):
         code = plan["indicateur"] = "pop_totale"
     elif code == "rapport_masculinite" and un_sexe and (
@@ -342,9 +355,14 @@ def corriger_indicateur(plan, question):
             or not any(m in texte for m in MOTS_RAPPORT)):
         code = plan["indicateur"] = "pop_totale"
 
-    # Ratios nommés par leurs composants. Constaté : « le rapport entre la
-    # population et le nombre de ménages » rendait un classement.
-    if "menage" in texte and "concession" in texte and any(
+    # Ratios demandés à l'envers de ce qui est publié : on garde le ratio
+    # publié, le classement est inversé (cadrage) et une note l'explique.
+    if re.search(r"concessions? par menage", texte):
+        plan["indicateur"], plan["inverse"] = "menages_par_concession", True
+    elif re.search(r"menages? (?:par rapport a|rapportes? a|par habitant|"
+                   r"par personne)", texte):
+        plan["indicateur"], plan["inverse"] = "taille_menage", True
+    elif "menage" in texte and "concession" in texte and any(
             m in texte for m in ("par concession", "rapport", "ratio", "moyen")):
         plan["indicateur"] = "menages_par_concession"
     elif "menage" in texte and (

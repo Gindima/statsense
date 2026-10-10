@@ -1,0 +1,14 @@
+Donne-moi les cinq régions les plus peuplées, mais affiche les résultats de la moins peuplée à la plus peuplée.
+Quelles régions ont le plus grand nombre de ménages par rapport à leur population ?
+Quels sont les quartiers ayant le plus grand nombre de concessions par ménage ?
+Combien de concessions par ménage à Dakar ?
+Quelle est la taille moyenne des ménages dans les cinq quartiers les plus peuplés de Dakar ?
+Quels quartiers ont plus de ménages que la moyenne nationale des quartiers ?
+Quelle est la différence entre le nombre de ménages et le nombre de concessions à Dakar ?
+Quelle proportion des ménages du Sénégal vit dans la région de Dakar ?
+Quels sont les 10 quartiers qui comptent le plus de ménages au Sénégal ?
+Quelle est la différence entre le taux de chômage le plus élevé et le plus faible en 2025 ?
+Quelles régions ont une population supérieure à un million d'habitants en 2023 ?
+Quel est le taux brut de natalité le plus récent disponible et à quelle année correspond-il ?
+Quelle proportion des ménages a accès à l'électricité à Dakar ?
+Quelle est la différence entre le nombre d'hommes et le nombre de femmes à Dakar ?
