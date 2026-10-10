@@ -93,6 +93,7 @@ c'est-à-dire sans indicateur.
 
 import logging
 import time
+import re
 
 from analytics.moteur import executer
 from analytics.resultats import ErreurAnalyse
@@ -414,6 +415,18 @@ def repondre(question):
         # Conservée pour information, sans effet sur le déroulement.
         meta_plan = {**meta_plan, "doute_modele": plan["clarification"]}
 
+    # Tranche d'âge ajoutée par le modèle seul. Constaté : « Combien
+    # d'hommes vivent dans la région de Matam ? » -> pop_region, age=E15T64,
+    # refusé faute de données par âge à la région.
+    if (plan.get("indicateur") == "pop_region"
+            and plan.get("methode") != "repartition"
+            and not age_cite(question)
+            and not re.search(r"\bage|\bans\b|travail|activ|jeune|enfant|agee|vieux",
+                              _norm_age(question))):
+        plan["filtres"] = {k: v for k, v in (plan.get("filtres") or {}).items()
+                           if k != "age"}
+        if plan.get("dimension") == "age":
+            plan["dimension"] = None
 
     # (B) Sans année ni âge, le recensement fait foi. Constaté : la même
     # question rendait 2023 ou 2025 selon l'indicateur choisi par le modèle.
