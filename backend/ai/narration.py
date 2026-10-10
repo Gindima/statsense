@@ -99,6 +99,12 @@ def verifier(texte, resultat):
     rejetes = [n for n in _nombres(texte) if not _accepte(n, autorises)]
     return (None if rejetes else texte), rejetes
 
+SEXES = {"H": "hommes", "M": "hommes", "F": "femmes"}
+
+def _precision(m):
+    """« (hommes) » quand le résultat est filtré par sexe."""
+    s = ((m or {}).get("filtres") or {}).get("sexe")
+    return f" ({SEXES[s]})" if s in SEXES else ""
 
 def resume_factuel(question, resultat):
     """
@@ -106,7 +112,7 @@ def resume_factuel(question, resultat):
     puisqu'il n'est pas généré.
     """
     m = resultat.meta or {}
-    ind = m.get("indicateur", "L'indicateur demandé")
+    ind = m.get("indicateur", "L'indicateur demandé") + _precision(m)
     n = len(resultat.lignes)
 
     if resultat.chart_hint == "kpi" and n == 1:

@@ -119,7 +119,8 @@ from .prompts import (
 from .recherche import fiches, rechercher, zones_connues
 from .cadrage import (corriger_cadrage, corriger_comparaison, deux_sexes,
                       maille_demandee, seuil_cite, classement_evolution, statistique_zones,
-                      croisement_cite, projection_demandee, etapes_multiples, comptes_croises, part_menages)
+                      croisement_cite, projection_demandee, etapes_multiples, comptes_croises,
+                      part_menages, repartition_de_zones, double_superlatif)
 from .zones import corriger_zones, niveau_de_zone
 
 
@@ -378,6 +379,22 @@ def repondre(question):
             alternatives=["Quelle part de la population vit dans la région "
                           "de Dakar ?",
                           "Combien de ménages compte la région de Dakar ?"])
+
+    if repartition_de_zones(question):
+        return _refus(
+            "Répartir les zones elles-mêmes en classes (par exemple les "
+            "quartiers selon leur taille de ménage) n'est pas encore proposé. "
+            "Un classement range les zones selon l'indicateur.",
+            "analyse_non_traitee",
+            alternatives=["Quels quartiers ont la taille moyenne des ménages "
+                          "la plus élevée ?"])
+
+    if double_superlatif(question):
+        return _refus(
+            "Vérifier si les zones en tête pour un indicateur le sont aussi "
+            "pour un autre demande de croiser deux classements, ce qui n'est "
+            "pas encore proposé. Posez une question par indicateur.",
+            "analyse_non_traitee")
 
     # 1. Présélection du catalogue : le modèle choisira dans cette liste.
     candidats = rechercher(question)

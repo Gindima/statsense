@@ -517,8 +517,6 @@ def classement_evolution(question):
                 or re.match(r"(ou|dans quelle|quelle|quel)\b", texte))
 
 
-# backend/ai/cadrage.py — AJOUTER après classement_evolution (niveau module)
-
 # « dans les cinq quartiers les plus peuplés » : deux calculs enchaînés
 RE_SOUS_ENSEMBLE = re.compile(
     r"\b(?:dans|parmi|pour) (?:les|ces) "
@@ -567,6 +565,20 @@ def part_menages(question):
             and any(f" {m}" in t for m in MOTS_PART_MENAGES)
             and not any(f" {m}" in t for m in EXCLUS_PART))
 
+# « la répartition des quartiers selon leur taille de ménage »
+RE_REPARTITION_ZONES = re.compile(
+    r"\brepartition des (?:regions|departements|communes|quartiers)\b")
+# « les quartiers les plus peuplés ont-ils aussi les ménages les plus grands »
+RE_DOUBLE_SUPERLATIF = re.compile(
+    r"\bles plus \w+.*\b(?:aussi|egalement)\b.*\bles plus\b")
+
+
+def repartition_de_zones(question):
+    return bool(RE_REPARTITION_ZONES.search(_norm(question)))
+
+
+def double_superlatif(question):
+    return bool(RE_DOUBLE_SUPERLATIF.search(_norm(question)))
 
 RE_ECART = re.compile(r"\becarts?\b|\bdifference entre\b.*\bplus\b.*\bplus\b"
                       r"|\bmaxim\w*\b.*\bminim\w*\b|\bminim\w*\b.*\bmaxim\w*\b")
