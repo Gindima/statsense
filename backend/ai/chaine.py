@@ -118,7 +118,7 @@ from .prompts import (
 )
 from .recherche import fiches, rechercher, zones_connues
 from .cadrage import (corriger_cadrage, corriger_comparaison, deux_sexes,
-                      maille_demandee, seuil_cite, classement_evolution,
+                      maille_demandee, seuil_cite, classement_evolution, statistique_zones,
                       croisement_cite, projection_demandee, etapes_multiples, comptes_croises, part_menages)
 from .zones import corriger_zones, niveau_de_zone
 
@@ -309,6 +309,13 @@ def repondre(question):
         return _documentaire(doc, debut)
 
     # 0 bis. Analyses non proposées : refus immédiat, sans appel au modèle.
+
+    if statistique_zones(question):
+        return _refus(
+            "La médiane et les autres statistiques de dispersion entre zones "
+            "ne sont pas encore calculées. Un classement range les zones et "
+            "permet de situer chacune.", "analyse_non_traitee")
+
     seuil = seuil_cite(question)
     if seuil:
         return _refus(

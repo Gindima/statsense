@@ -1,0 +1,7 @@
+Quel est le nombre médian de ménages par quartier au Sénégal ?
+Quelles régions ont un taux d'emploi supérieur à la médiane régionale en 2023 ?
+Quels quartiers ont une taille moyenne des ménages comprise entre 6 et 8 personnes ?
+Quelle est la différence entre le taux de chômage maximal et minimal observé au niveau régional en 2023 ?
+Quelle est la différence entre le taux de chômage le plus élevé et le plus faible en 2025 ?
+Quelle est la taille moyenne des ménages à Dakar ?
+Comment le chômage à Dakar a-t-il évolué depuis 2015 ?

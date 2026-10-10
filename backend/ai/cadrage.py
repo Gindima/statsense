@@ -487,6 +487,11 @@ def seuil_cite(question):
         return m.group(1)
     if RE_SEUIL_MOYENNE.search(texte):
         return "la moyenne"
+
+    m = RE_INTERVALLE_VALEUR.search(texte)
+    if m:
+        return f"entre {m.group(1)} et {m.group(2)}"
+
     return None
 
 RE_ZONES_PLURIEL = re.compile(r"\b(regions|departements|communes|quartiers)\b")
@@ -555,7 +560,16 @@ def part_menages(question):
             and not any(f" {m}" in t for m in EXCLUS_PART))
 
 
-RE_ECART = re.compile(r"\becarts?\b|\bdifference entre\b.*\bplus\b.*\bplus\b")
+RE_ECART = re.compile(r"\becarts?\b|\bdifference entre\b.*\bplus\b.*\bplus\b"
+                      r"|\bmaxim\w*\b.*\bminim\w*\b|\bminim\w*\b.*\bmaxim\w*\b")
+# « comprise entre 6 et 8 » : un intervalle de valeurs (pas des années)
+RE_INTERVALLE_VALEUR = re.compile(r"\bcomprise?s? entre (\d{1,3}) et (\d{1,3})\b")
+
+
+def statistique_zones(question):
+    """« médiane », « nombre médian » : non calculés."""
+    return bool(re.search(r"\bmedian", _norm(question)))
+
 RE_RECENT = re.compile(
     r"\bplus recente?s?\b|\bderni\w* (?:valeur|donnee|mesure|chiffre)s?\b")
 
@@ -653,9 +667,12 @@ def corriger_cadrage(plan, question):
             and nombre_cite(question) is None):
         plan["methode"] = "valeur_simple"
 
-    # « l'écart entre la meilleure et la plus faible » : le moteur ajoute
-    # l'écart entre les extrêmes du classement complet.
-    if plan.get("methode") == "classement" and RE_ECART.search(_norm(question)):
+    if RE_ECART.search(_norm(question)) and (
+            plan.get("methode") == "classement"
+            or (plan.get("methode") == "valeur_simple" and not nommees)):
+        plan["methode"] = "classement"
+        if plan.get("niveau") in (None, "national"):
+            plan["niveau"] = "region"
         plan["ecart_extremes"] = True
         plan["ordre"] = "desc"
         plan["top_n"] = 60
