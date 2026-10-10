@@ -536,8 +536,16 @@ RE_DEUX_COMPTES = re.compile(
     r"\b(menages?|concessions?|habitants|population)\b.*?\bet\b.*?"
     r"\b(menages?|concessions?|habitants|population)\b")
 
+# « rapport entre concessions et population » : ratio non publié
+RE_RATIO_NON_PUBLIE = re.compile(
+    r"\b(?:rapport|ratio)\b.*\bconcessions?\b.*\b(?:population|habitants)\b"
+    r"|\b(?:rapport|ratio)\b.*\b(?:population|habitants)\b.*\bconcessions?\b")
 
 def comptes_croises(question):
+
+    if RE_RATIO_NON_PUBLIE.search(_norm(question)):
+        return ["concessions", "population"]
+
     m = RE_DEUX_COMPTES.search(_norm(question))
     if not m:
         return None

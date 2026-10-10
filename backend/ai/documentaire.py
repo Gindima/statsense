@@ -108,6 +108,8 @@ MOTIFS = [
         "quels indicateurs sont disponibles",
         "sur quelle periode les donnees", "sont elles disponibles",
         "quel niveau geographique", "combien d observations",
+        "pour quels indicateurs", "quels indicateurs permettent",
+        "quels indicateurs ont", "quels indicateurs disposent",
     )),
 ]
 

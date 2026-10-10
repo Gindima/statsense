@@ -1,0 +1,5 @@
+Pour quels indicateurs dispose-t-on de données couvrant au moins dix années consécutives ?
+Pour quels indicateurs le niveau géographique disponible est-il le département plutôt que la région ou le quartier ?
+Quel est le rapport entre le nombre de concessions et la population recensée dans chaque quartier ?
+Quel est le rapport entre la population totale et le nombre de ménages dans chacune des régions ?
+Calcule le nombre moyen de ménages par concession au niveau national.
